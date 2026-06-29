@@ -1,0 +1,2035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#183934" />
+<meta name="description" content="Offline HSE safety audit, risk & legal assessment, analytics and brand-compliant Excel/PowerPoint/PDF export." />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/png" href="icons/favicon-64.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ADITUP" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>Aditup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  /* ================= TOKENS (locked from reference palette) ================= */
+  :root{
+    --green:#307268; --green-deep:#183934; --yellow:#efc71d;
+    --sage:#bbc8ca; --sand:#e2d2bf; --cream:#f9f3d9;
+    --font:'Montserrat',system-ui,sans-serif;
+    --ease:cubic-bezier(.22,.61,.36,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--font); color:var(--cream);
+    background:linear-gradient(180deg,var(--green-deep) 0%,#112a26 100%);
+    min-height:100dvh; overflow-x:hidden; -webkit-font-smoothing:antialiased;
+  }
+
+  /* ============ SHARED ANIMATED SAFETY WATERMARK (every screen) ============ */
+  .watermark{
+    position:fixed; inset:-50% -50%; z-index:0; pointer-events:none;
+    opacity:.06; background-repeat:repeat; background-size:620px 360px;
+    animation:drift 60s linear infinite; will-change:transform;
+  }
+  @keyframes drift{from{transform:translate3d(0,0,0);}to{transform:translate3d(-620px,-360px,0);}}
+  @media(prefers-reduced-motion:reduce){.watermark{animation:none;}}
+
+  /* ============ SCREEN SYSTEM ============ */
+  .screen{ position:relative; z-index:1; min-height:100dvh; display:none;
+    padding:clamp(20px,4vw,40px); }
+  .screen.active{ display:block; animation:screenIn .4s var(--ease); }
+  .screen.center{ display:none; }
+  .screen.center.active{ display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  @keyframes screenIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+  @media(prefers-reduced-motion:reduce){.screen.active{animation:none;}}
+  .shell{ max-width:920px; margin:0 auto; width:100%; }
+
+  /* ============ TOPBAR ============ */
+  .topbar{ display:flex; align-items:center; gap:14px; margin-bottom:26px; }
+  .mark{ width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
+    background:linear-gradient(145deg,var(--yellow),#d4ac00);
+    box-shadow:0 5px 0 #b8920a,0 10px 18px rgba(0,0,0,.4); flex:none; }
+  .mark svg{width:55%;height:55%;}
+  .crumb{font-size:12px;font-weight:600;color:var(--sage);letter-spacing:.16em;text-transform:uppercase;}
+  .topbar h1{font-size:18px;font-weight:800;letter-spacing:-.01em;}
+  .step-pill{ margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--green-deep);background:var(--yellow);padding:7px 12px;border-radius:999px; }
+  .back{ background:none;border:1px solid rgba(187,200,202,.3);color:var(--sage);
+    font-family:var(--font);font-weight:600;font-size:13px;border-radius:10px;padding:8px 14px;
+    cursor:pointer; display:inline-flex;align-items:center;gap:7px; transition:.2s var(--ease); margin-bottom:18px;}
+  .back:hover{border-color:var(--yellow);color:var(--yellow);}
+  .back svg{width:15px;height:15px;}
+
+  /* ============ PANELS / FIELDS ============ */
+  .panel{ background:rgba(249,243,217,.05); border:1px solid rgba(187,200,202,.18);
+    border-radius:18px; padding:clamp(18px,3vw,26px); margin-bottom:20px; }
+  .panel-title{ font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--yellow); margin-bottom:18px; }
+  .grid{display:grid;gap:16px;grid-template-columns:1fr;}
+  @media(min-width:620px){.grid.two{grid-template-columns:1fr 1fr;}}
+  label.field{display:flex;flex-direction:column;gap:7px;}
+  .lab{font-size:12px;font-weight:600;color:var(--sage);letter-spacing:.04em;}
+  .req{color:var(--yellow);}
+  .input{ font-family:var(--font);font-size:15px;font-weight:500;color:var(--cream);
+    background:rgba(24,57,52,.55);border:1px solid rgba(187,200,202,.25);border-radius:12px;
+    padding:13px 14px; transition:border-color .2s var(--ease),box-shadow .2s var(--ease);
+    width:100%; text-align:left; min-height:48px; }
+  input[type=date].input{ text-align:left; -webkit-appearance:none; appearance:none; }
+  input[type=date].input::-webkit-date-and-time-value{ text-align:left; }
+  .input::placeholder{color:rgba(187,200,202,.6);}
+  .input:focus{outline:none;border-color:var(--yellow);box-shadow:0 0 0 3px rgba(239,199,29,.22);}
+
+  .identity{display:grid;gap:14px;grid-template-columns:1fr;}
+  @media(min-width:620px){.identity{grid-template-columns:repeat(3,1fr);}}
+  .identity .item{background:rgba(24,57,52,.4);border-radius:12px;padding:12px 14px;}
+  .identity .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage);}
+  .identity .v{font-size:15px;font-weight:600;margin-top:3px;}
+  .identity-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .link-btn{background:none;border:none;color:var(--yellow);font-family:var(--font);
+    font-weight:600;font-size:13px;cursor:pointer;text-decoration:underline;}
+  .note{font-size:12px;color:var(--sage);line-height:1.4;}
+
+  /* primary / next button */
+  .primary{ position:relative; overflow:hidden; font-family:var(--font);font-weight:800;font-size:15px;
+    color:var(--green-deep);background:var(--yellow);border:none;border-radius:14px;padding:15px 26px;
+    cursor:pointer;width:100%; box-shadow:0 6px 0 #b8920a,0 12px 22px rgba(0,0,0,.35);
+    transition:transform .12s var(--ease),box-shadow .12s var(--ease),opacity .2s; }
+  .primary:active{transform:translateY(4px);box-shadow:0 2px 0 #b8920a,0 6px 12px rgba(0,0,0,.35);}
+  .primary:focus-visible{outline:3px solid var(--cream);outline-offset:3px;}
+  .primary:disabled{ background:rgba(187,200,202,.25); color:rgba(249,243,217,.5);
+    box-shadow:none; cursor:not-allowed; }
+  .gate-note{ text-align:center; font-size:12px; color:var(--sage); margin-top:10px; }
+  .ripple{position:absolute;border-radius:50%;transform:scale(0);background:rgba(24,57,52,.45);
+    animation:ripple .6s var(--ease);pointer-events:none;}
+  @keyframes ripple{to{transform:scale(4);opacity:0;}}
+  @media(prefers-reduced-motion:reduce){.ripple{animation:none;}}
+
+  /* ============ LANDING ============ */
+  .brand{text-align:center;perspective:900px;margin-bottom:clamp(36px,7vh,64px);}
+  .logo3d{width:clamp(56px,12vw,80px);height:clamp(56px,12vw,80px);margin:0 auto 22px;
+    display:grid;place-items:center;border-radius:22px;
+    background:linear-gradient(145deg,var(--yellow),#d4ac00);
+    box-shadow:0 10px 0 #b8920a,0 18px 34px rgba(0,0,0,.45),inset 0 2px 4px rgba(255,255,255,.5);
+    transform:rotateX(14deg) rotateZ(-3deg); animation:logoFloat 5s var(--ease) infinite alternate;}
+  .logo3d svg{width:56%;height:56%;}
+  @keyframes logoFloat{from{transform:rotateX(14deg) rotateZ(-3deg) translateY(0);}to{transform:rotateX(8deg) rotateZ(2deg) translateY(-8px);}}
+  .title-3d{position:relative;display:inline-block;font-weight:900;
+    font-size:clamp(54px,14vw,128px);letter-spacing:-.02em;line-height:.9;color:var(--cream);
+    transform:rotateX(18deg);
+    text-shadow:0 1px 0 #fffbe9,0 2px 0 var(--sand),0 3px 0 #c9b89f,0 4px 0 #9bbab2,
+      0 5px 0 var(--green),0 6px 0 #2a655c,0 7px 0 #245851,0 8px 0 var(--green-deep),
+      0 9px 1px rgba(0,0,0,.35),0 12px 24px rgba(0,0,0,.55);}
+  .title-3d::after{content:"Aditup";position:absolute;inset:0;color:transparent;
+    background:linear-gradient(100deg,transparent 30%,rgba(239,199,29,.85) 50%,transparent 70%);
+    -webkit-background-clip:text;background-clip:text;background-size:280% 100%;animation:sweep 4.5s var(--ease) infinite;}
+  @keyframes sweep{0%{background-position:180% 0;}100%{background-position:-80% 0;}}
+  .tagline{margin-top:18px;font-weight:500;font-size:clamp(12px,2.6vw,15px);letter-spacing:.26em;text-transform:uppercase;color:var(--sage);}
+  @media(prefers-reduced-motion:reduce){.logo3d{animation:none;}.title-3d::after{animation:none;opacity:.25;}}
+  .choose{font-weight:600;font-size:clamp(14px,3vw,17px);margin:0 0 20px;text-align:center;opacity:.85;}
+  .options{display:grid;gap:18px;width:100%;max-width:760px;grid-template-columns:1fr;}
+  @media(min-width:720px){.options{grid-template-columns:1fr 1fr;}}
+  .card{--edge:var(--green);text-align:left;cursor:pointer;border:1px solid rgba(187,200,202,.22);
+    border-left:5px solid var(--edge);border-radius:18px;padding:26px 24px 24px;
+    background:rgba(249,243,217,.04);color:var(--cream);font-family:var(--font);
+    display:flex;flex-direction:column;gap:10px;
+    transition:transform .28s var(--ease),background .28s var(--ease),border-color .28s var(--ease),box-shadow .28s var(--ease);}
+  .card:hover,.card:focus-visible{transform:translateY(-4px);background:rgba(249,243,217,.08);border-color:var(--edge);box-shadow:0 16px 36px rgba(0,0,0,.4);outline:none;}
+  .card:focus-visible{outline:3px solid var(--yellow);outline-offset:3px;}
+  .card--comp{--edge:var(--yellow);}
+  .card .kicker{font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;color:var(--edge);}
+  .card h2{font-size:clamp(19px,4vw,23px);font-weight:700;letter-spacing:-.01em;}
+  .card p{font-size:14px;font-weight:400;line-height:1.5;color:var(--sage);}
+  .card .go{margin-top:6px;font-size:13px;font-weight:600;color:var(--edge);display:inline-flex;align-items:center;gap:7px;}
+  .card .go svg{width:15px;height:15px;transition:transform .28s var(--ease);}
+  .card:hover .go svg{transform:translateX(4px);}
+
+  /* ============ PHOTO + QUALITY ============ */
+  .photo-row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;}
+  .photo-drop{flex:1;min-width:200px;border:2px dashed rgba(187,200,202,.4);border-radius:14px;
+    padding:18px;text-align:center;cursor:pointer;color:var(--sage);font-size:14px;
+    transition:border-color .2s var(--ease),background .2s var(--ease);}
+  .photo-drop:hover{border-color:var(--yellow);background:rgba(239,199,29,.06);}
+  .photo-drop.has{color:var(--cream);border-style:solid;border-color:var(--green);}
+  .photo-drop img{max-height:90px;border-radius:8px;margin-top:8px;}
+  .photo-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px;}
+  .photo-btn{font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;
+    border-radius:10px;padding:10px 16px;border:1.5px solid transparent;transition:.15s var(--ease);
+    display:inline-flex;align-items:center;gap:6px;}
+  .photo-btn.cam{background:var(--yellow);color:var(--green-deep);}
+  .photo-btn.cam:hover{filter:brightness(1.06);transform:translateY(-1px);}
+  .photo-btn.pick{background:rgba(187,200,202,.14);color:var(--cream);border-color:rgba(187,200,202,.4);}
+  .photo-btn.pick:hover{border-color:var(--yellow);background:rgba(239,199,29,.08);}
+  .qbox{display:flex;flex-direction:column;gap:6px;min-width:180px;}
+  .qval{font-size:13px;font-weight:600;color:var(--yellow);}
+  input[type=range]{accent-color:var(--yellow);}
+  .qwarn{font-size:11px;color:var(--sand);line-height:1.4;}
+
+  /* ============ TABLE ============ */
+  .tbl-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;min-width:560px;}
+  thead th{text-align:left;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--sage);font-weight:700;padding:0 12px 12px;border-bottom:1px solid rgba(187,200,202,.2);}
+  tbody td{padding:14px 12px;border-bottom:1px solid rgba(187,200,202,.1);font-size:14px;vertical-align:top;}
+  tbody tr{animation:rowIn .35s var(--ease);}
+  @keyframes rowIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  @media(prefers-reduced-motion:reduce){tbody tr{animation:none;}}
+  tbody td img{width:54px;height:54px;object-fit:cover;border-radius:8px;}
+  .empty{text-align:center;color:var(--sage);padding:26px;font-size:14px;}
+  .row-act{display:inline-flex;gap:8px;}
+  .icon-btn{width:34px;height:34px;border-radius:9px;border:1px solid rgba(187,200,202,.3);background:transparent;cursor:pointer;display:grid;place-items:center;transition:.2s var(--ease);}
+  .icon-btn svg{width:16px;height:16px;}
+  .icon-btn.edit{color:var(--sage);}.icon-btn.edit:hover{border-color:var(--yellow);color:var(--yellow);}
+  .icon-btn.del{color:var(--sage);}.icon-btn.del:hover{border-color:#e07a6b;color:#e07a6b;}
+
+  .stage2-card{text-align:center;padding:48px 26px;}
+  .stage2-card h2{font-size:24px;font-weight:800;margin-bottom:10px;}
+  .stage2-card p{color:var(--sage);max-width:420px;margin:0 auto 22px;line-height:1.5;}
+
+  /* ============ CLEAR ALL (top-right) ============ */
+  .clear-all{ position:relative; overflow:hidden; display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--font); font-weight:700; font-size:12.5px; letter-spacing:.02em;
+    color:var(--sand); background:rgba(224,122,107,.10); border:1px solid rgba(224,122,107,.4);
+    border-radius:11px; padding:9px 14px; cursor:pointer; transition:.2s var(--ease); }
+  .clear-all:hover{ background:rgba(224,122,107,.18); border-color:#e07a6b; color:#f3b6ab; }
+  .clear-all:focus-visible{ outline:3px solid var(--yellow); outline-offset:2px; }
+  .clear-all svg{ width:15px; height:15px; }
+  .clear-all:disabled{ opacity:.4; cursor:not-allowed; }
+
+  /* ============ SCRAPE-AWAY OVERLAY (Clear All) ============ */
+  .scrape{ position:fixed; inset:0; z-index:60; pointer-events:none; display:none; }
+  .scrape.on{ display:block; }
+  .scrape-blade{ position:absolute; top:0; bottom:0; width:46vw; left:-50vw;
+    background:linear-gradient(90deg,
+      transparent 0%, rgba(187,200,202,.04) 30%,
+      rgba(48,114,104,.55) 62%, rgba(239,199,29,.92) 80%, var(--cream) 92%, #fff 100%);
+    box-shadow:14px 0 40px rgba(239,199,29,.5), -60px 0 80px rgba(24,57,52,.6);
+    filter:blur(.3px); }
+  .scrape-blade::before{ content:""; position:absolute; top:0; bottom:0; right:-2px; width:5px;
+    background:var(--cream); box-shadow:0 0 22px 5px rgba(249,243,217,.8); }
+  /* curls of "scraped" material peeling off the blade edge */
+  .scrape-blade::after{ content:""; position:absolute; top:0; bottom:0; right:-26px; width:26px;
+    background:repeating-linear-gradient(115deg, rgba(187,200,202,.5) 0 7px, transparent 7px 15px);
+    -webkit-mask:linear-gradient(90deg,transparent,#000); mask:linear-gradient(90deg,transparent,#000); opacity:.7; }
+  .scrape.on .scrape-blade{ animation:scrapeAcross .85s var(--ease) forwards; }
+  @keyframes scrapeAcross{ from{ left:-55vw; } to{ left:120vw; } }
+  /* the panel being cleared briefly "smears" then snaps clean */
+  .scraping{ animation:smearClean .85s var(--ease); }
+  @keyframes smearClean{
+    0%{ filter:none; }
+    45%{ filter:blur(2px) brightness(1.15); transform:translateX(6px) skewX(-2deg); opacity:.5; }
+    46%{ opacity:0; }
+    60%{ opacity:0; transform:none; filter:none; }
+    100%{ opacity:1; }
+  }
+  @media(prefers-reduced-motion:reduce){
+    .scrape.on .scrape-blade{ animation:none; } .scraping{ animation:none; }
+  }
+
+  /* ============ EXPORT BAR + FLIGHT LAUNCH ============ */
+  .export-wrap{ margin-top:6px; }
+  .export-head{ font-size:12px; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--sage); margin-bottom:12px; display:flex; align-items:center; gap:9px; }
+  .export-head svg{ width:15px; height:15px; color:var(--yellow); }
+  .export-bar{ display:grid; gap:14px; grid-template-columns:1fr; }
+  @media(min-width:560px){ .export-bar{ grid-template-columns:repeat(3,1fr); } }
+  .export-btn{ position:relative; overflow:hidden; font-family:var(--font); font-weight:800; font-size:14.5px;
+    color:var(--green-deep); border:none; border-radius:14px; padding:16px 14px 15px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;
+    transition:transform .12s var(--ease), box-shadow .12s var(--ease), filter .2s; }
+  .export-btn .ico{ width:30px; height:30px; display:grid; place-items:center; }
+  .export-btn .ico svg{ width:100%; height:100%; }
+  .export-btn small{ font-weight:600; font-size:10.5px; letter-spacing:.04em; opacity:.72; }
+  .export-btn:active{ transform:translateY(4px); }
+  .export-btn:focus-visible{ outline:3px solid var(--cream); outline-offset:3px; }
+  .export-btn:disabled{ filter:grayscale(.6); opacity:.5; cursor:not-allowed; }
+  .export-btn.excel{ background:linear-gradient(150deg,#5fbf8f,#2f8f63); color:#072017;
+    box-shadow:0 6px 0 #1f6b48,0 12px 22px rgba(0,0,0,.34); }
+  .export-btn.pdf{ background:linear-gradient(150deg,#ef9b8c,#d9614c); color:#2a0f0a;
+    box-shadow:0 6px 0 #a8412f,0 12px 22px rgba(0,0,0,.34); }
+  .export-btn.ppt{ background:linear-gradient(150deg,var(--yellow),#d4ac00); color:var(--green-deep);
+    box-shadow:0 6px 0 #b8920a,0 12px 22px rgba(0,0,0,.34); }
+  .export-btn.launching{ animation:btnDip .5s var(--ease); }
+  @keyframes btnDip{ 0%{transform:none;} 30%{transform:translateY(5px) scale(.97);} 100%{transform:none;} }
+  .skip-link{ display:block; text-align:center; margin-top:16px; background:none; border:none;
+    color:var(--sage); font-family:var(--font); font-weight:600; font-size:13px; cursor:pointer;
+    text-decoration:underline; text-underline-offset:3px; }
+  .skip-link:hover{ color:var(--yellow); }
+
+  /* flying craft (paper plane / rocket) */
+  .flier{ position:fixed; z-index:70; left:0; top:0; width:64px; height:64px; pointer-events:none;
+    display:none; will-change:transform,opacity; }
+  .flier.go{ display:block; }
+  .flier svg{ width:100%; height:100%; filter:drop-shadow(0 6px 10px rgba(0,0,0,.4)); }
+  .flier.plane.go{ animation:planeFly 1.15s var(--ease) forwards; }
+  .flier.rocket.go{ animation:rocketFly 1.15s var(--ease) forwards; }
+  @keyframes planeFly{
+    0%{ transform:translate(8vw,72vh) rotate(-18deg) scale(.7); opacity:0; }
+    12%{ opacity:1; }
+    45%{ transform:translate(42vw,26vh) rotate(-8deg) scale(1.05); }
+    78%{ transform:translate(74vw,40vh) rotate(6deg) scale(.92); opacity:1; }
+    100%{ transform:translate(108vw,8vh) rotate(14deg) scale(.5); opacity:0; }
+  }
+  @keyframes rocketFly{
+    0%{ transform:translate(46vw,86vh) rotate(-30deg) scale(.6); opacity:0; }
+    14%{ opacity:1; transform:translate(44vw,70vh) rotate(-30deg) scale(1); }
+    55%{ transform:translate(38vw,34vh) rotate(-26deg) scale(1.08); }
+    100%{ transform:translate(20vw,-22vh) rotate(-24deg) scale(.6); opacity:0; }
+  }
+  /* vapour / dotted trail */
+  .trail{ position:fixed; z-index:69; width:8px; height:8px; border-radius:50%; pointer-events:none;
+    background:var(--yellow); opacity:.8; animation:trailFade .9s var(--ease) forwards; }
+  @keyframes trailFade{ from{ transform:scale(1); opacity:.8; } to{ transform:scale(.2); opacity:0; } }
+  @media(prefers-reduced-motion:reduce){
+    .flier.go{ animation:none !important; display:none; } .trail{ display:none; } .export-btn.launching{ animation:none; }
+  }
+
+  /* ============ TOAST ============ */
+  .toast-stack{ position:fixed; z-index:80; left:50%; bottom:26px; transform:translateX(-50%);
+    display:flex; flex-direction:column; gap:10px; align-items:center; pointer-events:none; width:max-content; max-width:92vw; }
+  .toast{ font-family:var(--font); font-weight:600; font-size:13.5px; color:var(--green-deep);
+    background:var(--cream); border-left:5px solid var(--green); border-radius:12px;
+    padding:12px 16px; box-shadow:0 10px 28px rgba(0,0,0,.4); animation:toastIn .3s var(--ease); }
+  .toast.warn{ border-left-color:#d9614c; }
+  .toast.ok{ border-left-color:var(--green); }
+  @keyframes toastIn{ from{ opacity:0; transform:translateY(12px); } to{ opacity:1; transform:none; } }
+
+  /* ============ STAGE 2 DETAILED TABLE ============ */
+  .s2-head{ display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; justify-content:space-between; margin-bottom:18px; }
+  .s2-stats{ display:flex; gap:10px; flex-wrap:wrap; }
+  .stat{ background:rgba(24,57,52,.5); border:1px solid rgba(187,200,202,.18); border-radius:12px;
+    padding:9px 14px; min-width:82px; }
+  .stat .k{ font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--sage); }
+  .stat .v{ font-size:19px; font-weight:800; color:var(--cream); margin-top:2px; }
+  .stat .v.amber{ color:var(--yellow); } .stat .v.red{ color:#f0a092; }
+
+  .s2-table{ width:100%; border-collapse:separate; border-spacing:0; min-width:1340px; }
+  .s2-table thead th{ position:sticky; top:0; z-index:2; background:#173630;
+    text-align:left; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--yellow);
+    font-weight:700; padding:12px 10px; border-bottom:2px solid rgba(239,199,29,.3); white-space:nowrap; }
+  .s2-table tbody td{ padding:12px 10px; border-bottom:1px solid rgba(187,200,202,.12);
+    font-size:13px; vertical-align:top; }
+  .s2-table tbody tr{ animation:rowIn .35s var(--ease); }
+  .s2-table tbody tr:hover{ background:rgba(249,243,217,.03); }
+  .sno{ font-weight:800; color:var(--yellow); font-size:14px; }
+  .obs-cell{ max-width:230px; min-width:180px; }
+  .obs-cell .obs-loc{ font-weight:700; color:var(--cream); font-size:12.5px; }
+  .obs-cell .obs-txt{ color:var(--sage); font-size:12.5px; line-height:1.45; margin-top:3px; }
+  .obs-cell img{ width:46px; height:46px; object-fit:cover; border-radius:7px; margin-top:7px; }
+  .obs-edit{ font-family:var(--font); width:100%; color:var(--cream); background:rgba(24,57,52,.6);
+    border:1px solid rgba(187,200,202,.22); border-radius:8px; padding:7px 9px; font-size:12.5px; }
+  .obs-edit:focus{ outline:none; border-color:var(--yellow); box-shadow:0 0 0 3px rgba(239,199,29,.2); }
+  .obs-edit::placeholder{ color:rgba(187,200,202,.55); }
+  .obs-edit-loc{ font-weight:700; margin-bottom:6px; }
+  .obs-edit-txt{ resize:vertical; line-height:1.42; display:block; }
+
+  .mini-select{ font-family:var(--font); font-size:12.5px; font-weight:600; color:var(--cream);
+    background:rgba(24,57,52,.7); border:1px solid rgba(187,200,202,.28); border-radius:9px;
+    padding:8px 8px; width:100%; min-width:92px; cursor:pointer; transition:border-color .15s var(--ease); }
+  .mini-select:focus{ outline:none; border-color:var(--yellow); box-shadow:0 0 0 3px rgba(239,199,29,.2); }
+  .mini-select option{ background:#173630; color:var(--cream); }
+  .sev-prob{ width:62px; min-width:62px; text-align:center; }
+
+  .risk-badge{ display:inline-flex; align-items:center; justify-content:center; min-width:42px;
+    font-weight:800; font-size:14px; border-radius:9px; padding:8px 10px; letter-spacing:.02em; }
+  .risk-badge.none{ background:rgba(187,200,202,.14); color:var(--sage); font-weight:600; font-size:12px; }
+  .risk-badge.low{ background:rgba(95,191,143,.18); color:#7fd6a6; border:1px solid rgba(95,191,143,.4); }
+  .risk-badge.med{ background:rgba(239,199,29,.18); color:var(--yellow); border:1px solid rgba(239,199,29,.45); }
+  .risk-badge.high{ background:rgba(217,97,76,.2); color:#f0a092; border:1px solid rgba(217,97,76,.5); }
+  .risk-cap{ display:block; font-size:9px; letter-spacing:.1em; text-transform:uppercase; margin-top:4px; opacity:.8; font-weight:700; }
+
+  .legal-cell{ max-width:300px; min-width:230px; }
+  .legal-req{ font-size:12px; line-height:1.45; color:var(--cream); background:rgba(48,114,104,.18);
+    border:1px solid rgba(48,114,104,.4); border-radius:9px; padding:8px 10px; margin-bottom:8px; min-height:38px; }
+  .legal-req.empty{ color:var(--sage); font-style:italic; background:rgba(187,200,202,.06); border-color:rgba(187,200,202,.18); }
+  .legal-match-note{ font-size:10.5px; color:var(--sage); margin-bottom:6px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .kw-chip{ background:rgba(239,199,29,.16); color:var(--yellow); border-radius:999px; padding:2px 8px;
+    font-size:10px; font-weight:700; letter-spacing:.02em; }
+  .legal-select{ font-family:var(--font); font-size:12px; font-weight:600; color:var(--cream);
+    background:rgba(24,57,52,.7); border:1px solid rgba(187,200,202,.28); border-radius:9px;
+    padding:9px 8px; width:100%; cursor:pointer; }
+  .legal-select:focus{ outline:none; border-color:var(--yellow); box-shadow:0 0 0 3px rgba(239,199,29,.2); }
+  .legal-select option{ background:#173630; color:var(--cream); }
+
+  .s2-empty{ text-align:center; padding:46px 20px; color:var(--sage); }
+  .s2-empty h2{ color:var(--cream); font-size:20px; font-weight:800; margin-bottom:8px; }
+  .s2-actions{ display:flex; flex-wrap:wrap; gap:14px; margin-top:22px; }
+  .s2-actions .primary{ flex:1; min-width:200px; }
+  .ghost-btn{ flex:1; min-width:160px; font-family:var(--font); font-weight:700; font-size:14px;
+    color:var(--sage); background:none; border:1px solid rgba(187,200,202,.3); border-radius:14px;
+    padding:15px 20px; cursor:pointer; transition:.2s var(--ease); }
+  .ghost-btn:hover{ border-color:var(--yellow); color:var(--yellow); }
+
+  /* ---- finding type / criticality / status / positive lockout ---- */
+  .find-select.f-positive{ border-color:rgba(95,191,143,.6); background:rgba(95,191,143,.14); color:#9fe0bd; font-weight:700; }
+  .mini-select.locked{ opacity:.4; cursor:not-allowed; filter:grayscale(.5); }
+  .positive-row{ background:rgba(95,191,143,.05); }
+  .positive-row:hover{ background:rgba(95,191,143,.08); }
+  .risk-badge.pos{ background:rgba(95,191,143,.2); color:#7fd6a6; border:1px solid rgba(95,191,143,.5); font-size:15px; }
+  .mini-select.crit-high{ border-color:rgba(217,97,76,.55); background:rgba(217,97,76,.14); color:#f0a092; }
+  .mini-select.crit-medium{ border-color:rgba(239,199,29,.5); background:rgba(239,199,29,.13); color:var(--yellow); }
+  .mini-select.crit-low{ border-color:rgba(95,191,143,.5); background:rgba(95,191,143,.13); color:#7fd6a6; }
+  .mini-select.status-open{ border-color:rgba(217,97,76,.5); background:rgba(217,97,76,.12); color:#f0a092; }
+  .mini-select.status-inprogress{ border-color:rgba(239,199,29,.5); background:rgba(239,199,29,.12); color:var(--yellow); }
+  .mini-select.status-closed{ border-color:rgba(95,191,143,.5); background:rgba(95,191,143,.12); color:#7fd6a6; }
+  .mini-select.cq-injury{ border-color:rgba(217,97,76,.55); background:rgba(217,97,76,.14); color:#f0a092; }
+  .mini-select.cq-finance{ border-color:rgba(239,199,29,.5); background:rgba(239,199,29,.13); color:var(--yellow); }
+  .mini-select.cq-equip{ border-color:rgba(187,200,202,.5); background:rgba(187,200,202,.14); color:var(--sage); }
+  .mini-select.cq-fire{ border-color:rgba(226,210,191,.55); background:rgba(226,210,191,.16); color:var(--sand); }
+  .mini-select.cq-legal{ border-color:rgba(48,114,104,.6); background:rgba(48,114,104,.2); color:#7fcabd; }
+
+  /* ---- STAGE 2 ANALYTICS (glassmorphism over watermark) ---- */
+  .charts-wrap{ margin:8px 0 26px; }
+  .analytics-cta{ display:flex; flex-wrap:wrap; align-items:center; gap:12px 16px; margin:8px 0 22px; }
+  .analytics-btn{ display:inline-flex; align-items:center; gap:10px; flex:none; }
+  .analytics-btn .analytics-count{ font-size:11px; font-weight:800; color:var(--green-deep);
+    background:var(--yellow); border-radius:999px; padding:2px 9px; }
+  .analytics-hint{ font-size:12px; color:var(--sage); }
+  .charts-grid-7{ grid-template-columns:1fr; }
+  @media(min-width:780px){ .charts-grid-7{ grid-template-columns:1fr 1fr; } }
+  .charts-head{ font-size:12px; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--yellow); margin:0 0 14px; }
+  .charts-grid{ display:grid; gap:18px; grid-template-columns:1fr; }
+  @media(min-width:780px){ .charts-grid{ grid-template-columns:1fr 1fr; }
+    .chart-card.span2{ grid-column:1 / -1; } }
+  .chart-card{ position:relative; border-radius:18px; padding:18px 18px 14px;
+    background:rgba(22,51,46,.55); border:1px solid rgba(187,200,202,.18);
+    backdrop-filter:blur(9px) saturate(1.1); -webkit-backdrop-filter:blur(9px) saturate(1.1);
+    box-shadow:0 10px 30px rgba(0,0,0,.28); overflow:hidden; }
+  .chart-card h3{ font-family:var(--font); font-size:14px; font-weight:800; color:var(--cream);
+    margin:0 0 2px; letter-spacing:-.01em; }
+  .chart-card .csub{ font-size:11px; color:var(--sage); margin-bottom:12px; }
+  .chart-card svg{ display:block; }
+  .chart-card .legend{ display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:12px; }
+  .chart-card .legend span{ display:inline-flex; align-items:center; gap:6px; font-size:11px;
+    font-weight:600; color:var(--sage); }
+  .chart-card .legend i{ width:11px; height:11px; border-radius:3px; flex:none; }
+  .chart-empty{ display:grid; place-items:center; min-height:170px; text-align:center;
+    color:var(--sage); font-size:12.5px; font-style:italic; padding:20px;
+    border:1px dashed rgba(187,200,202,.22); border-radius:12px; }
+  .tm-cell,.hm-cell,.rd-pt{ cursor:pointer; transition:opacity .15s var(--ease); outline:none; }
+  .tm-cell:hover,.hm-cell:hover{ opacity:.86; }
+  .tm-cell:focus-visible rect,.hm-cell:focus-visible rect{ stroke:var(--yellow); stroke-width:2.5; }
+  .rd-pt:hover,.rd-pt:focus-visible{ r:7; }
+  .chart-tip{ position:fixed; z-index:9999; pointer-events:none; background:#0e2b27;
+    border:1px solid rgba(239,199,29,.45); border-radius:10px; padding:9px 12px;
+    font-family:var(--font); box-shadow:0 12px 28px rgba(0,0,0,.5); max-width:240px; }
+  .chart-tip b{ display:block; font-size:12.5px; font-weight:800; color:var(--cream); margin-bottom:2px; }
+  .chart-tip span{ font-size:11.5px; color:var(--yellow); font-weight:600; }
+  @media(prefers-reduced-motion:reduce){ .chart-card{ backdrop-filter:none; -webkit-backdrop-filter:none; background:rgba(22,51,46,.85); } }
+
+  /* ---- single export button + format dropdown ---- */
+  .export-menu{ position:relative; display:inline-block; }
+  .export-trigger{ display:inline-flex; align-items:center; gap:10px; font-family:var(--font);
+    font-weight:800; font-size:15px; color:var(--green-deep); background:var(--yellow); border:none;
+    border-radius:14px; padding:14px 20px; cursor:pointer;
+    box-shadow:0 6px 0 #b8920a,0 12px 22px rgba(0,0,0,.32); transition:transform .12s var(--ease),box-shadow .12s var(--ease); }
+  .export-trigger:active{ transform:translateY(4px); box-shadow:0 2px 0 #b8920a,0 6px 12px rgba(0,0,0,.32); }
+  .export-trigger:focus-visible{ outline:3px solid var(--cream); outline-offset:3px; }
+  .export-trigger .ico{ width:20px; height:20px; display:grid; place-items:center; }
+  .export-trigger .ico svg{ width:100%; height:100%; }
+  .export-trigger .caret{ width:16px; height:16px; transition:transform .2s var(--ease); }
+  .export-trigger.open .caret{ transform:rotate(180deg); }
+
+  .export-pop{ position:absolute; left:0; top:calc(100% + 10px); z-index:30; min-width:230px;
+    background:#16332e; border:1px solid rgba(187,200,202,.22); border-radius:14px; padding:8px;
+    box-shadow:0 18px 40px rgba(0,0,0,.5); animation:popIn .16s var(--ease); }
+  .export-pop[hidden]{ display:none; }
+  @keyframes popIn{ from{ opacity:0; transform:translateY(-6px); } to{ opacity:1; transform:none; } }
+  .export-pop-label{ font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--sage); padding:8px 10px 6px; }
+  .export-opt{ display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+    font-family:var(--font); font-weight:700; font-size:14px; color:var(--cream); background:none;
+    border:none; border-radius:10px; padding:11px 10px; cursor:pointer; transition:background .15s var(--ease); }
+  .export-opt:hover,.export-opt:focus-visible{ background:rgba(249,243,217,.07); outline:none; }
+  .export-opt:focus-visible{ box-shadow:inset 0 0 0 2px rgba(239,199,29,.5); }
+  .export-opt .lbl{ display:flex; flex-direction:column; gap:1px; }
+  .export-opt small{ font-weight:500; font-size:11px; color:var(--sage); }
+  .export-opt .dot{ width:11px; height:11px; border-radius:3px; flex:none; }
+  .export-opt.excel .dot{ background:#5fbf8f; }
+  .export-opt.pdf .dot{ background:#ef9b8c; }
+  .export-opt.ppt .dot{ background:var(--yellow); }
+  @media(prefers-reduced-motion:reduce){ .export-pop{ animation:none; } }
+</style>
+</head>
+<body>
+<div class="watermark" id="watermark" aria-hidden="true"></div>
+
+<!-- scrape-away overlay (Clear All) -->
+<div class="scrape" id="scrape" aria-hidden="true"><div class="scrape-blade"></div></div>
+
+<!-- flying craft (export launch) -->
+<div class="flier plane" id="flier" aria-hidden="true">
+  <svg id="flierSvg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+
+<!-- toast notifications -->
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+<!-- ============ SCREEN: LANDING ============ -->
+<section class="screen center active" id="s-landing">
+  <div class="brand">
+    <div class="logo3d" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 8.3 8 11 4.6-2.7 8-6 8-11V5l-8-3Z" fill="#183934"/><path d="M8.5 12.2l2.3 2.3 4.7-4.9" fill="none" stroke="#efc71d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <h1 class="title-3d">Aditup</h1>
+    <p class="tagline">Safety Audits, Done Right</p>
+  </div>
+  <p class="choose">Choose how you want to run this audit</p>
+  <div class="options">
+    <button class="card" type="button" onclick="alert('Checklist-based audit is built in a later stage.')">
+      <span class="kicker">Fast</span><h2>Checklist-based audit</h2>
+      <p>Work through a fixed list of safety checks. Best for routine, recurring inspections.</p>
+      <span class="go">Start <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </button>
+    <button class="card card--comp" type="button" onclick="go('s-details')">
+      <span class="kicker">In depth</span><h2>Comprehensive audit</h2>
+      <p>A full guided assessment with findings, evidence capture and scoring. Best for formal sign-off.</p>
+      <span class="go">Start <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </button>
+  </div>
+</section>
+
+<!-- ============ SCREEN: AUDIT DETAILS ============ -->
+<section class="screen" id="s-details">
+  <div class="shell">
+    <button class="back" onclick="go('s-landing')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Back</button>
+    <div class="topbar">
+      <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 8.3 8 11 4.6-2.7 8-6 8-11V5l-8-3Z" fill="#183934"/><path d="M8.5 12.2l2.3 2.3 4.7-4.9" fill="none" stroke="#efc71d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div><div class="crumb">Comprehensive audit</div><h1>Stage 1 · Audit details</h1></div>
+      <span class="step-pill">Step 1 of 4</span>
+    </div>
+
+    <section class="panel">
+      <div class="panel-title">Audit details</div>
+      <div class="grid two">
+        <label class="field"><span class="lab">Date <span class="req">*</span></span>
+          <input class="input" type="date" id="auditDate" oninput="checkGate()" /></label>
+        <label class="field"><span class="lab">Location of audit <span class="req">*</span></span>
+          <input class="input" type="text" id="auditLocation" placeholder="e.g. Warehouse B, North Yard" oninput="checkGate()" /></label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">Auditor</div>
+      <div class="grid two">
+        <label class="field"><span class="lab">Name</span>
+          <input class="input" type="text" id="audName" value="Jordan Mensah" /></label>
+        <label class="field"><span class="lab">Phone</span>
+          <input class="input" type="tel" id="audPhone" value="+44 7700 900318" /></label>
+        <label class="field"><span class="lab">Email</span>
+          <input class="input" type="email" id="audEmail" value="j.mensah@aditup.app" /></label>
+      </div>
+      <p class="note" style="margin-top:12px">Edit these directly; they're attached to every entry in this audit.</p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">Plant / establishment detail</div>
+      <div class="grid two">
+        <label class="field"><span class="lab">1 · Name / type of establishment</span>
+          <input class="input" type="text" id="pl1" placeholder="e.g. Distribution warehouse" /></label>
+        <label class="field"><span class="lab">2 · Address &amp; location</span>
+          <input class="input" type="text" id="pl2" placeholder="Full site address" /></label>
+        <label class="field"><span class="lab">3 · Plot size</span>
+          <input class="input" type="text" id="pl3" placeholder="e.g. 12,000 sq m" /></label>
+        <label class="field"><span class="lab">4 · Height of each building</span>
+          <input class="input" type="text" id="pl4" placeholder="e.g. Block A 14 m, Block B 9 m" /></label>
+        <label class="field"><span class="lab">5 · Main gate width</span>
+          <input class="input" type="text" id="pl5" placeholder="e.g. 6 m" /></label>
+        <label class="field"><span class="lab">6 · Total employees (permanent &amp; contractual)</span>
+          <input class="input" type="text" id="pl6" placeholder="e.g. 180 perm / 40 contract" /></label>
+        <label class="field" style="grid-column:1/-1"><span class="lab">7 · Total no. of gates (with brief)</span>
+          <textarea class="input" id="pl7" rows="2" placeholder="e.g. 3 gates — main (vehicles), side (staff), rear (emergency)"></textarea></label>
+      </div>
+    </section>
+
+    <button class="primary" id="nextBtn" disabled onclick="ripple(event);go('s-observe')">Next · Add observations</button>
+    <p class="gate-note" id="gateNote">Add a date and audit location to continue.</p>
+  </div>
+</section>
+
+<!-- ============ SCREEN: OBSERVATIONS ============ -->
+<section class="screen" id="s-observe">
+  <div class="shell">
+    <button class="back" onclick="go('s-details')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Back to details</button>
+    <div class="topbar">
+      <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 8.3 8 11 4.6-2.7 8-6 8-11V5l-8-3Z" fill="#183934"/><path d="M8.5 12.2l2.3 2.3 4.7-4.9" fill="none" stroke="#efc71d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div><div class="crumb" id="obsCrumb">Comprehensive audit</div><h1>Stage 1 · New observation</h1></div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+        <button class="clear-all" id="clearAllBtn" type="button" title="Reset every field and clear the log">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+          Clear all
+        </button>
+        <span class="step-pill">Step 2 of 4</span>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel-title">New observation</div>
+      <div class="grid">
+        <label class="field"><span class="lab">Location</span>
+          <input class="input" type="text" id="obsLocation" placeholder="Where exactly? e.g. Bay 3, north wall" /></label>
+        <label class="field"><span class="lab">Observation</span>
+          <textarea class="input" id="obsText" rows="3" placeholder="What did you find?"></textarea></label>
+        <div class="photo-row">
+          <div class="photo-drop" id="photoDrop" role="group" aria-label="Attach a photo">
+            <span id="photoLabel">Attach a photo of the observation</span>
+            <div class="photo-actions">
+              <button type="button" class="photo-btn cam" id="btnCamera">📷 Take photo</button>
+              <button type="button" class="photo-btn pick" id="btnChoose">🖼 Choose file</button>
+            </div>
+          </div>
+          <input type="file" id="photoCamera" accept="image/*" capture="environment" hidden />
+          <input type="file" id="photoInput" accept="image/*" hidden />
+          <div class="qbox"><span class="lab">Photo quality</span>
+            <span class="qval"><span id="qDisplay">55</span>% · cap 1600px</span>
+            <input type="range" id="quality" min="20" max="90" value="55" />
+            <span class="qwarn" id="qWarn"></span></div>
+        </div>
+      </div>
+      <button class="primary" id="logBtn" type="button" style="margin-top:18px">Log entry</button>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">Logged observations (<span id="count">0</span>)</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Location</th><th>Observation</th><th>Photo</th><th style="text-align:right">Actions</th></tr></thead>
+        <tbody id="tbody"><tr id="emptyRow"><td class="empty" colspan="4">No observations logged yet. Add one above.</td></tr></tbody>
+      </table></div>
+    </section>
+
+    <button class="primary" type="button" onclick="ripple(event);reviewStage2()">Review &amp; continue to Stage 2</button>
+  </div>
+</section>
+
+<!-- ============ SCREEN: STAGE 2 · RISK & LEGAL TABLE ============ -->
+<section class="screen" id="s-stage2">
+  <div class="shell" style="max-width:1240px;">
+    <button class="back" onclick="go('s-observe')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Back to observations</button>
+    <div class="topbar">
+      <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 8.3 8 11 4.6-2.7 8-6 8-11V5l-8-3Z" fill="#183934"/><path d="M8.5 12.2l2.3 2.3 4.7-4.9" fill="none" stroke="#efc71d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div><div class="crumb">Comprehensive audit</div><h1>Stage 2 · Risk rating &amp; legal mapping</h1></div>
+      <span class="step-pill" style="margin-left:auto;">Step 3 of 4</span>
+    </div>
+
+    <section class="panel">
+      <div class="s2-head">
+        <div>
+          <div class="panel-title" style="margin-bottom:6px;">Assess each observation</div>
+          <p class="note" id="stage2Summary" style="max-width:560px;"></p>
+        </div>
+        <div class="s2-stats">
+          <div class="stat"><div class="k">Observations</div><div class="v" id="s2Count">0</div></div>
+          <div class="stat"><div class="k">High risk</div><div class="v red" id="s2High">0</div></div>
+          <div class="stat"><div class="k">Mapped to law</div><div class="v amber" id="s2Mapped">0</div></div>
+        </div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="s2-table" id="s2Table">
+          <thead><tr>
+            <th>SNO</th>
+            <th>Observation</th>
+            <th>Finding type</th>
+            <th>Department</th>
+            <th>Sev.</th>
+            <th>Prob.</th>
+            <th>Risk rating</th>
+            <th>Criticality</th>
+            <th>Consequence</th>
+            <th>Observation category</th>
+            <th>Legal requirement &amp; dropdown</th>
+            <th>Status</th>
+          </tr></thead>
+          <tbody id="s2Body"></tbody>
+        </table>
+      </div>
+
+      <div id="s2Empty" class="s2-empty" style="display:none;">
+        <h2>No observations to assess yet</h2>
+        <p>Go back to Stage 1, log at least one observation, then return here to rate risk and map legal standards.</p>
+      </div>
+
+      <div class="analytics-cta" id="s2Charts">
+        <button class="ghost-btn analytics-btn" type="button" onclick="openAnalytics()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M3 3v18h18M7 14l4-4 3 3 5-6"/></svg>
+          View visual analytics
+          <span class="analytics-count" id="analyticsCount"></span>
+        </button>
+        <span class="analytics-hint">7 interactive charts — severity, status, risk, category, findings, locations &amp; impact</span>
+      </div>
+
+      <div class="export-wrap" id="s2Export" style="margin-top:24px;">
+        <div class="export-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 0l-4 4m4-4l4 4M5 21h14"/></svg>
+          Export this assessment
+        </div>
+        <div class="export-menu" id="exportMenu">
+          <button class="export-trigger" id="exportTrigger" type="button" aria-haspopup="true" aria-expanded="false" onclick="toggleExportMenu(event)">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 0l-4 4m4-4l4 4M5 21h14"/></svg></span>
+            <span>Export</span>
+            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="export-pop" id="exportPop" role="menu" aria-label="Choose export format" hidden>
+            <div class="export-pop-label">Choose a format</div>
+            <button class="export-opt excel" role="menuitem" type="button" onclick="chooseExport('excel')">
+              <span class="dot"></span><span class="lbl">Excel<small>.xlsx · Dashboard + Data</small></span>
+            </button>
+            <button class="export-opt pdf" role="menuitem" type="button" onclick="chooseExport('pdf')">
+              <span class="dot"></span><span class="lbl">PDF<small>Multi-page report</small></span>
+            </button>
+            <button class="export-opt ppt" role="menuitem" type="button" onclick="chooseExport('ppt')">
+              <span class="dot"></span><span class="lbl">PPT<small>Slide deck + charts</small></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="s2-actions">
+        <button class="ghost-btn" type="button" onclick="go('s-observe')">Add more observations</button>
+        <button class="primary" type="button" style="flex:1;min-width:200px;" onclick="ripple(event);toast('Stage 3 builds on these legal matches — coming next.','ok')">Save &amp; continue to Stage 3</button>
+      </div>
+    </section>
+  </div>
+</section>
+
+<!-- ============ SCREEN: ANALYTICS DASHBOARD (7 charts) ============ -->
+<section class="screen" id="s-analytics">
+  <div class="shell" style="max-width:1240px;">
+    <button class="back" onclick="go('s-stage2')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Back to assessment</button>
+    <div class="topbar">
+      <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 8.3 8 11 4.6-2.7 8-6 8-11V5l-8-3Z" fill="#183934"/><path d="M8.5 12.2l2.3 2.3 4.7-4.9" fill="none" stroke="#efc71d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div><div class="crumb">Comprehensive audit</div><h1>Visual analytics dashboard</h1></div>
+      <span class="step-pill" style="margin-left:auto;">7 charts</span>
+    </div>
+
+    <div id="analyticsEmpty" class="s2-empty" style="display:none;">
+      <h2>No data to visualize yet</h2>
+      <p>Log observations and assess them in Stage 2, then return here to see the full analytics suite.</p>
+    </div>
+
+    <div class="charts-grid charts-grid-7" id="analyticsGrid">
+      <div class="chart-card">
+        <h3>Severity profile</h3>
+        <div class="csub">Each observation by probability &times; severity, sized by risk (bubble)</div>
+        <div id="chartBubble"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Closure status</h3>
+        <div class="csub">Share of Open / In Progress / Closed (donut)</div>
+        <div id="chartDonut"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Risk distribution</h3>
+        <div class="csub">Low / Medium / High risk stacked by department (stacked bar)</div>
+        <div id="chartStacked"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Category load</h3>
+        <div class="csub">Observation count per category (horizontal bar)</div>
+        <div id="chartHBar"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Findings type</h3>
+        <div class="csub">Volume &amp; share of each finding category (treemap)</div>
+        <div id="chartTreemap"></div>
+        <div class="legend">
+          <span><i style="background:#d9614c"></i>Unsafe Act</span>
+          <span><i style="background:#efc71d"></i>Unsafe Condition</span>
+          <span><i style="background:#307268"></i>Near Miss</span>
+          <span><i style="background:#1f4f48"></i>Non Compliance</span>
+          <span><i style="background:#5fbf8f"></i>Positive</span>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Impact</h3>
+        <div class="csub">Observation count by consequence type (radar)</div>
+        <div id="chartRadar"></div>
+      </div>
+      <div class="chart-card span2">
+        <h3>Locations</h3>
+        <div class="csub">Observation density across category &times; department (heatmap)</div>
+        <div id="chartHeatmap"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ============ SHARED: watermark ============ */
+(function mountWatermark(){
+  const words=['INSPECT','VERIFY','COMPLY','AUDIT','SECURE','REPORT'];
+  const rows=words.map((w,i)=>`<text x="${(i%2)*40}" y="${50+i*56}" font-family="Montserrat, sans-serif" font-size="26" font-weight="800" letter-spacing="4" fill="#bbc8ca">${w}</text>`).join('');
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="620" height="360"><g opacity="0.9">${rows}<path d="M540 40l5-13 5 13-5 4z" fill="none" stroke="#efc71d" stroke-width="2"/><circle cx="80" cy="300" r="14" fill="none" stroke="#307268" stroke-width="2"/></g></svg>`;
+  document.getElementById('watermark').style.backgroundImage=`url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
+})();
+
+/* ============ SHARED: image compression ============ */
+function compressImage(file,{maxEdge=1600,quality=.55}={}){
+  return new Promise((res,rej)=>{
+    if(!file){rej(new Error('No file selected'));return;}
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        try{
+          let{width,height}=img;
+          if(!width||!height){rej(new Error('Image has no dimensions'));return;}
+          if(Math.max(width,height)>maxEdge){const s=maxEdge/Math.max(width,height);width=Math.round(width*s);height=Math.round(height*s);}
+          const c=document.createElement('canvas');c.width=width;c.height=height;
+          c.getContext('2d').drawImage(img,0,0,width,height);
+          res({dataUrl:c.toDataURL('image/jpeg',quality),width,height});
+        }catch(e){rej(new Error('Could not process image: '+e.message));}
+      };
+      img.onerror=()=>rej(new Error('Image could not be decoded'));
+      img.src=reader.result;
+    };
+    reader.onerror=()=>rej(new Error('Could not read the file'));
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ============ NAVIGATION ============ */
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function ripple(e){
+  const btn=e.currentTarget;const r=document.createElement('span');r.className='ripple';
+  const rect=btn.getBoundingClientRect();const d=Math.max(rect.width,rect.height);
+  r.style.width=r.style.height=d+'px';r.style.left=(e.clientX-rect.left-d/2)+'px';r.style.top=(e.clientY-rect.top-d/2)+'px';
+  btn.appendChild(r);setTimeout(()=>r.remove(),600);
+}
+
+/* ============ GATE: details -> next ============ */
+const auditDate=document.getElementById('auditDate');
+auditDate.valueAsDate=new Date();
+function checkGate(){
+  const ok=auditDate.value && document.getElementById('auditLocation').value.trim();
+  document.getElementById('nextBtn').disabled=!ok;
+  document.getElementById('gateNote').style.display=ok?'none':'block';
+}
+checkGate();
+
+/* ============ PHOTO + QUALITY ============ */
+let pendingPhoto=null,lastFile=null;
+const photoInput=document.getElementById('photoInput'),photoCamera=document.getElementById('photoCamera'),
+      photoDrop=document.getElementById('photoDrop'),
+      btnCamera=document.getElementById('btnCamera'),btnChoose=document.getElementById('btnChoose'),
+      photoLabel=document.getElementById('photoLabel'),quality=document.getElementById('quality'),
+      qDisplay=document.getElementById('qDisplay'),qWarn=document.getElementById('qWarn');
+function warnFor(q){return q<=30?'Very small files, but fine detail (cracks, serial numbers, gauge readings) may be lost.':q<=45?'Good storage saving; most findings stay readable.':'Findings stay sharp; files a little larger.';}
+function refreshQ(){qDisplay.textContent=quality.value;qWarn.textContent=warnFor(+quality.value);}
+quality.addEventListener('input',()=>{refreshQ();if(lastFile)recompress();});refreshQ();
+// open camera (rear) or file picker; reset value first so re-selecting the same file still fires change
+btnCamera.addEventListener('click',()=>{photoCamera.value='';photoCamera.click();});
+btnChoose.addEventListener('click',()=>{photoInput.value='';photoInput.click();});
+function onPhotoPicked(e){
+  const f=e.target.files&&e.target.files[0];
+  if(!f){photoLabel.innerHTML='<span style="color:#e07a6b">No image came back. Try again, or use “Choose file”.</span>';return;}
+  if(f.type&&f.type.indexOf('image/')!==0){photoLabel.innerHTML='<span style="color:#e07a6b">That wasn’t an image file. Please pick a photo.</span>';return;}
+  lastFile=f;recompress();
+}
+photoInput.addEventListener('change',onPhotoPicked);
+photoCamera.addEventListener('change',onPhotoPicked);
+async function recompress(){
+  photoDrop.classList.remove('has');
+  photoLabel.innerHTML='<span style="color:var(--yellow)">Processing photo…</span>';
+  try{
+    const out=await compressImage(lastFile,{maxEdge:1600,quality:+quality.value/100});
+    pendingPhoto=out;photoDrop.classList.add('has');
+    photoLabel.innerHTML=`✓ Attached · ${out.width}×${out.height}<br><img src="${out.dataUrl}" alt="preview"><br><span style="font-size:11px;color:var(--sage)">Compressed at ${quality.value}% — tap to replace</span>`;
+  }catch(err){
+    pendingPhoto=null;
+    photoLabel.innerHTML=`<span style="color:#e07a6b">⚠ ${err.message}. Tap to try again.</span>`;
+  }
+}
+
+/* ============ LOG ENTRY TABLE ============ */
+const logBtn=document.getElementById('logBtn');
+logBtn.addEventListener('click',e=>{ripple(e);addEntry();});
+const entries=[],tbody=document.getElementById('tbody'),emptyRow=document.getElementById('emptyRow'),countEl=document.getElementById('count');
+function addEntry(){
+  const loc=document.getElementById('obsLocation').value.trim(),txt=document.getElementById('obsText').value.trim();
+  if(!loc&&!txt){alert('Add a location or observation before logging.');return;}
+  if(!pendingPhoto){
+    if(!confirm('No photo is attached to this observation. Log it anyway?'))return;
+  }
+  entries.push({id:Date.now(),loc,txt,photo:pendingPhoto});render();
+  document.getElementById('obsLocation').value='';document.getElementById('obsText').value='';
+  pendingPhoto=null;lastFile=null;photoDrop.classList.remove('has');photoLabel.textContent='Attach a photo of the observation';
+}
+function render(){
+  countEl.textContent=entries.length;emptyRow.style.display=entries.length?'none':'';
+  tbody.querySelectorAll('tr[data-id]').forEach(n=>n.remove());
+  for(const en of entries){
+    const tr=document.createElement('tr');tr.dataset.id=en.id;
+    tr.innerHTML=`<td>${esc(en.loc)||dash()}</td><td>${esc(en.txt)||dash()}</td>
+      <td>${en.photo?`<img src="${en.photo.dataUrl}" alt="evidence" title="${en.photo.width}×${en.photo.height}">`:'<span style="color:var(--sage);font-size:12px">No photo</span>'}</td>
+      <td style="text-align:right"><span class="row-act">
+        <button class="icon-btn edit" title="Edit" aria-label="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+        <button class="icon-btn del" title="Delete" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+      </span></td>`;
+    tr.querySelector('.edit').onclick=()=>editEntry(en.id);
+    tr.querySelector('.del').onclick=()=>delEntry(en.id);
+    tbody.appendChild(tr);
+  }
+}
+function editEntry(id){const en=entries.find(x=>x.id===id);if(!en)return;
+  document.getElementById('obsLocation').value=en.loc;document.getElementById('obsText').value=en.txt;
+  pendingPhoto=en.photo;if(en.photo){photoDrop.classList.add('has');photoLabel.innerHTML=`✓ Attached<br><img src="${en.photo.dataUrl}" alt="preview">`;}else{photoDrop.classList.remove('has');photoLabel.textContent='Attach a photo of the observation';}
+  entries.splice(entries.indexOf(en),1);render();document.getElementById('obsLocation').focus();}
+function delEntry(id){if(!confirm('Delete this observation?'))return;const i=entries.findIndex(x=>x.id===id);if(i>-1){entries.splice(i,1);render();}}
+function esc(s){return(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function dash(){return '<span style="color:var(--sage)">—</span>';}
+
+/* ============ STAGE 2 · LEGAL KEYWORD DATABASE (from uploaded Excel) ============ */
+const LEGAL_DB={"Electrical Safety":{"kw":{"earth":"IS 3043:2018 – Code of Practice for Earthing","cable":"IS 694:2010 – PVC Insulated Cables for working voltages up to 1100V","wiring":"IS 732:2019 – Code of Practice for Electrical Wiring Installations","conduit":"IS 9537 – Conduits for Electrical Installations","fuse":"IS 13703 – HRC Cartridge Fuse Links up to 650V","mcb":"IS 8828 / IS/IEC 60898 – Miniature Circuit Breakers","elcb":"IS 12640 – Residual Current Operated Circuit Breakers (RCCB/ELCB)","switchgear":"IS/IEC 60947 – Low-Voltage Switchgear and Controlgear","panel":"IS 8623 – Factory Built Assemblies of Switchgear & Controlgear","transformer":"CEA (Safety & Electric Supply) Regulations, 2010 – Reg. 38 (Transformers)","danger":"IS 2551 – Danger Notice Plates","loto":"IS 5216 (Part 1):1982 – Safety Procedures & Practices in Electrical Work","shock":"CEA (Safety & Electric Supply) Regulations, 2010 – Reg. 43 (First-aid / shock treatment)","clearance":"CEA (Safety & Electric Supply) Regulations, 2010 – Reg. 64 (Clearances)"},"default":"CEA (Measures relating to Safety & Electric Supply) Regulations, 2010"},"Fire Protection":{"kw":{"extinguisher":"IS 2190:2010 – Selection, Installation & Maintenance of First-aid Fire Extinguishers","hydrant":"IS 3844:1989 – Installation & Maintenance of Internal Hydrants and Hose Reels","sprinkler":"IS 15105:2002 – Design & Installation of Fixed Automatic Sprinkler Systems","hose":"IS 3844:1989 – Internal Hydrants and Hose Reels","alarm":"IS 2189:2008 – Automatic Fire Detection and Alarm System","detector":"IS 2189:2008 – Automatic Fire Detection and Alarm System","smoke":"NBC 2016, Part 4 – Fire & Life Safety (Smoke Management)","foam":"IS 4989 – Foam Concentrate for Fire-fighting","exit":"NBC 2016, Part 4 – Fire & Life Safety (Means of Egress)","pump":"IS 12469 / IS 15301 – Fire Pumps for Hydrant & Sprinkler Systems","flammable":"Factories Act, 1948 – Section 37 (Explosive or inflammable dust, gas)","compartment":"NBC 2016, Part 4 – Fire & Life Safety (Compartmentation)"},"default":"Factories Act, 1948 – Section 38 (Precautions in case of fire)"},"Mechanical Integrity":{"kw":{"guard":"Factories Act, 1948 – Section 21 (Fencing of machinery)","crane":"IS 3177:2020 – Code of Practice for Electric Overhead Travelling Cranes","hoist":"Factories Act, 1948 – Section 28 (Hoists and lifts)","chain":"Factories Act, 1948 – Section 29 (Lifting machines, chains, ropes & tackle)","sling":"IS 2762:1982 – Wire Rope Slings and Sling Legs","rope":"IS 2266 – Steel Wire Ropes for General Engineering Purposes","press":"IS 4460 – Safety Requirements for the Use of Power Presses","conveyor":"IS 7155 – Code of Practice for Conveyor Safety","pressure":"Factories Act, 1948 – Section 31 (Pressure plant)","boiler":"Boilers Act, 1923 read with Indian Boiler Regulations, 1950","vessel":"IS 2825:1969 – Code for Unfired Pressure Vessels","revolving":"Factories Act, 1948 – Section 30 (Revolving machinery – safe speed)"},"default":"Factories Act, 1948 – Section 21 (Fencing of machinery)"},"Civil & Structural":{"kw":{"concrete":"IS 456:2000 – Code of Practice for Plain and Reinforced Concrete","crack":"IS 456:2000 – Plain & Reinforced Concrete (crack-width limits)","steel":"IS 800:2007 – General Construction in Steel","weld":"IS 816:1969 – Code of Practice for Metal Arc Welding for Structures","foundation":"IS 1904:1986 – Design & Construction of Foundations in Soils","load":"IS 875 (Part 2):1987 – Design Loads (Imposed Loads)","seismic":"IS 1893 (Part 1):2016 – Criteria for Earthquake Resistant Design","ductile":"IS 13920:2016 – Ductile Detailing of RC Structures","floor":"Factories Act, 1948 – Section 32 (Floors, stairs & means of access)","stair":"Factories Act, 1948 – Section 32 (Floors, stairs & means of access)","excavation":"BOCW (RE&CS) Central Rules, 1998 – Excavation & Shoring provisions"},"default":"Factories Act, 1948 – Section 40 (Safety of buildings and machinery)"},"Housekeeping & Order":{"kw":{"cleanliness":"Factories Act, 1948 – Section 11 (Cleanliness)","spill":"Factories Act, 1948 – Section 11 (Cleanliness – floors free from obstruction)","waste":"Factories Act, 1948 – Section 12 (Disposal of wastes and effluents)","dust":"Factories Act, 1948 – Section 14 (Dust and fume)","lighting":"Factories Act, 1948 – Section 17 (Lighting)","drainage":"Factories Act, 1948 – Section 11(1)(c) (Effective drainage)","aisle":"Factories Act, 1948 – Section 32 (Means of access kept clear)","stacking":"IS 4082:1996 – Stacking & Storage of Construction Materials at Site","leak":"Factories Act, 1948 – Section 11 (Cleanliness)","clutter":"Factories Act, 1948 – Section 32 (Means of access)","segregation":"Factories Act, 1948 – Section 12 (Disposal of wastes)"},"default":"Factories Act, 1948 – Section 11 (Cleanliness)"},"PPE Compliance":{"kw":{"helmet":"IS 2925:1984 – Industrial Safety Helmets","goggle":"IS 5983:1980 – Eye Protectors","glove":"IS 6994 (Part 1):1973 – Industrial Safety Gloves","shoe":"IS 15298 (Part 2):2016 – Personal Protective Equipment – Safety Footwear","earplug":"IS 9167:1979 – Ear Protectors","respirator":"IS 9473 – Respiratory Protective Devices","face":"IS 8521 (Part 1):1977 – Face Shields","apron":"IS 4501:1981 – Aprons (Rubberized / Leather)","vest":"IS 15809:2017 – High Visibility Warning Clothing","eye":"Factories Act, 1948 – Section 35 (Protection of eyes)","fallarrest":"IS 3521:1999 – Industrial Safety Belts and Harnesses"},"default":"Factories Act, 1948 – Section 7A (General duties of the occupier – provision of PPE)"},"Environmental Control":{"kw":{"effluent":"Water (Prevention & Control of Pollution) Act, 1974 – Section 24","emission":"Air (Prevention & Control of Pollution) Act, 1981 – Section 22","noise":"Noise Pollution (Regulation & Control) Rules, 2000","stack":"Air (Prevention & Control of Pollution) Act, 1981 (CPCB stack emission norms)","discharge":"Water (Prevention & Control of Pollution) Act, 1974 – Section 24","consent":"Water Act, 1974 – Sec 25 / Air Act, 1981 – Sec 21 (Consent to Establish/Operate)","ewaste":"E-Waste (Management) Rules, 2022","plastic":"Plastic Waste Management Rules, 2016","hazardous waste":"Hazardous & Other Wastes (Management & Transboundary Movement) Rules, 2016","groundwater":"Environment (Protection) Rules, 1986 / CGWA Guidelines","monitoring":"Environment (Protection) Act, 1986 – Section 7 & EP Rules, 1986"},"default":"Environment (Protection) Act, 1986 – Section 7 (Discharge in excess of standards)"},"Chemical & Hazmat Management":{"kw":{"sds":"MSIHC Rules, 1989 – Safety Data Sheet (Schedule 9) under EPA 1986","cylinder":"Gas Cylinders Rules, 2016 (PESO)","lpg":"Static & Mobile Pressure Vessels (Unfired) Rules, 2016 (PESO)","petroleum":"Petroleum Rules, 2002 (PESO) under Petroleum Act, 1934","explosive":"Explosives Rules, 2008 (PESO) under Explosives Act, 1884","label":"MSIHC Rules, 1989 – Labelling of Hazardous Chemicals (Schedule)","toxic":"Factories Act, 1948 – Section 41B (Hazardous process – disclosure)","corrosive":"MSIHC Rules, 1989 (under EPA 1986)","bund":"Petroleum Rules, 2002 – Dyke / Impounding requirements (PESO)","threshold":"MSIHC Rules, 1989 – Schedules 2 & 3 (Threshold Quantities)","spillage":"Chemical Accidents (EPPR) Rules, 1996"},"default":"MSIHC Rules, 1989 (under Environment Protection Act, 1986)"},"Ergonomics & Manual Handling":{"kw":{"lifting":"Factories Act, 1948 – Section 34 (Excessive weights)","weight":"Factories Act, 1948 – Section 34 (Excessive weights)","carry":"Factories Act, 1948 – Section 34 (Excessive weights)","manual":"Factories Act, 1948 – Section 34 (Excessive weights)","strain":"Factories Act, 1948 – Section 34 (Excessive weights)","posture":"Factories Act, 1948 – Section 7A (General duties – safe systems of work)","repetitive":"Factories Act, 1948 – Section 7A (General duties – safe systems of work)","seating":"Factories Act, 1948 – Section 44 (Facilities for sitting)","fatigue":"Factories Act, 1948 – Sections 51 & 54 (Weekly / Daily working hours)","vibration":"Factories Act, 1948 – Section 7A (General duties – working environment)","workstation":"Factories Act, 1948 – Section 7A (General duties – working environment)"},"default":"Factories Act, 1948 – Section 34 (Excessive weights)"},"Emergency Preparedness":{"kw":{"evacuation":"NBC 2016, Part 4 – Fire & Life Safety (Means of Egress)","assembly":"NBC 2016, Part 4 – Fire & Life Safety (Assembly / refuge area)","drill":"MSIHC Rules, 1989 – Rule 13 (Mock drills under On-site Emergency Plan)","siren":"IS 2189:2008 – Fire Detection & Alarm System (warning siren)","firstaid":"Factories Act, 1948 – Section 45 (First-aid appliances)","onsite":"MSIHC Rules, 1989 – Rule 13 (On-site Emergency Plan)","offsite":"MSIHC Rules, 1989 – Rule 14 (Off-site Emergency Plan)","spill":"Chemical Accidents (EPPR) Rules, 1996","alarm":"IS 2189:2008 – Automatic Fire Detection & Alarm System","disaster":"Disaster Management Act, 2005","ambulance":"Factories Act, 1948 – Section 45 (First-aid / ambulance room)"},"default":"Factories Act, 1948 – Section 41B (On-site emergency plan / disclosure)"},"Working at Height":{"kw":{"scaffold":"IS 3696 (Part 1):1987 – Safety Code for Scaffolds","ladder":"IS 3696 (Part 2):1991 – Safety Code for Ladders","harness":"IS 3521:1999 – Industrial Safety Belts and Harnesses","lanyard":"IS 3521:1999 – Industrial Safety Belts and Harnesses","anchor":"IS 3521:1999 – Industrial Safety Belts and Harnesses (anchorage)","net":"IS 11057:1984 – Specification for Industrial Safety Nets","platform":"BOCW (RE&CS) Central Rules, 1998 – Working Platforms","guardrail":"NBC 2016, Part 4 – Guard rails / parapets on working levels","opening":"Factories Act, 1948 – Section 33 (Pits, sumps, openings in floors)","roof":"Factories Act, 1948 – Section 32 (Means of access – fragile roofs)","fall":"BOCW Act, 1996 read with BOCW Central Rules, 1998 (Fall protection)"},"default":"BOCW Act, 1996 read with BOCW (RE&CS) Central Rules, 1998 (Work at height)"},"Permit to Work":{"kw":{"hotwork":"Factories Act, 1948 – Section 37 + OISD-STD-105 (Work Permit System)","coldwork":"OISD-STD-105 – Work Permit System","isolation":"IS 5216 (Part 1):1982 + OISD-STD-105 (Energy isolation)","clearance":"OISD-STD-105 – Work Permit System","authorization":"OISD-STD-105 – Work Permit System","validity":"OISD-STD-105 – Work Permit System (permit time validity)","gastest":"OISD-STD-105 + Factories Act, 1948 – Section 36 (atmosphere testing)","radiography":"AERB Safety Code for Industrial Radiography (under Atomic Energy Act, 1962)","excavation":"BOCW (RE&CS) Central Rules, 1998 – Excavation permit","blanking":"OISD-STD-105 – Work Permit System (positive isolation)","heightpermit":"OISD-STD-105 – Work Permit System (work at height)"},"default":"OISD-STD-105 (Work Permit System) read with Factories Act, 1948 – Section 41B"},"Confined Space":{"kw":{"manhole":"Factories Act, 1948 – Section 36 (Precautions against dangerous fumes/gases)","tank":"Factories Act, 1948 – Section 36 (Precautions against dangerous fumes/gases)","vessel":"Factories Act, 1948 – Section 36 (Precautions against dangerous fumes/gases)","oxygen":"Factories Act, 1948 – Section 36 (Testing for adequacy of oxygen)","ventilation":"Factories Act, 1948 – Section 13 (Ventilation and temperature)","gastest":"Factories Act, 1948 – Section 36 (Atmosphere testing before entry)","entry":"Factories Act, 1948 – Section 36 (Precautions against dangerous fumes/gases)","portablelight":"Factories Act, 1948 – Section 36A (Portable electric light ≤ 24V)","sewer":"Prohibition of Employment as Manual Scavengers Act, 2013 (sewer/septic entry)","standby":"Factories Act, 1948 – Section 36 (Responsible person to keep watch)","purging":"Factories Act, 1948 – Section 36 (Rendering atmosphere safe)"},"default":"Factories Act, 1948 – Section 36 (Precautions against dangerous fumes, gases, etc.)"},"HSE Management System":{"kw":{"audit":"IS/ISO 45001:2018 – Clause 9.2 (Internal Audit)","policy":"IS/ISO 45001:2018 – Clause 5.2 (OH&S Policy)","training":"Factories Act, 1948 – Section 41B(4) + IS/ISO 45001:2018 Cl. 7.2","committee":"Factories Act, 1948 – Section 41G (Safety Committee)","safetyofficer":"Factories Act, 1948 – Section 40B (Safety Officers)","accident":"Factories Act, 1948 – Section 88 (Notice of certain accidents)","incident":"Factories Act, 1948 – Section 88A (Notice of dangerous occurrences)","disease":"Factories Act, 1948 – Section 89 (Notice of certain diseases)","risk":"IS/ISO 45001:2018 – Clause 6.1.2 (Hazard ID & Risk Assessment)","inspection":"Factories Act, 1948 – Section 9 (Powers of Inspectors)","objective":"IS/ISO 45001:2018 – Clause 6.2 (OH&S Objectives)"},"default":"Factories Act, 1948 – Section 7A (General duties of the occupier)"},"Contractor Safety":{"kw":{"contractor":"Contract Labour (Regulation & Abolition) Act, 1970","license":"Contract Labour (R&A) Act, 1970 – Section 12 (Licensing of contractors)","registration":"Contract Labour (R&A) Act, 1970 – Section 7 (Registration of establishments)","subcontractor":"Contract Labour (Regulation & Abolition) Act, 1970","migrant":"Inter-State Migrant Workmen (RE&CS) Act, 1979","compensation":"Employees' Compensation Act, 1923","esi":"Employees' State Insurance Act, 1948","muster":"Contract Labour (R&A) Central Rules, 1971 (Muster roll / registers)","amenities":"Contract Labour (R&A) Act, 1970 – Sections 16–18 (Welfare amenities)","induction":"Factories Act, 1948 – Section 7A + IS/ISO 45001:2018 Cl. 7.2","wages":"Code on Wages, 2019 / Contract Labour (R&A) Central Rules, 1971"},"default":"Contract Labour (Regulation & Abolition) Act, 1970"},"Road & Traffic Safety":{"kw":{"speed":"Motor Vehicles Act, 1988 – Section 112 (Limits of speed)","seatbelt":"Central Motor Vehicles Rules, 1989 – Rule 125 (Seat belts)","helmet":"Motor Vehicles Act, 1988 – Section 129 (Protective headgear)","license":"Motor Vehicles Act, 1988 – Section 3 (Necessity for driving licence)","signage":"IRC:67-2012 – Code of Practice for Road Signs","marking":"IRC:35-2015 – Code of Practice for Road Markings","pedestrian":"IRC:103-2012 – Guidelines for Pedestrian Facilities","reverse":"Central Motor Vehicles Rules, 1989 – Rule 119 (Audible warning / horn)","forklift":"Factories Act, 1948 – Section 29 (Lifting machines) + ISO 3691","banksman":"Factories Act, 1948 – Section 7A (Safe system of work)","parking":"Central Motor Vehicles Rules, 1989 / Motor Vehicles Act, 1988"},"default":"Motor Vehicles Act, 1988 read with Central Motor Vehicles Rules, 1989"}};
+
+/* Map Stage-2 observation-category labels -> LEGAL_DB category keys */
+const OBS_CATEGORIES=[
+  ['Electrical Safety','Electrical Safety'],['Fire Safety','Fire Protection'],
+  ['Machine Safety','Mechanical Integrity'],['Civil & Structural','Civil & Structural'],
+  ['Housekeeping','Housekeeping & Order'],['PPE','PPE Compliance'],
+  ['Environment','Environmental Control'],['Chemical Safety','Chemical & Hazmat Management'],
+  ['Ergonomics','Ergonomics & Manual Handling'],['Emergency or Life Safety','Emergency Preparedness'],
+  ['Work at Height','Working at Height'],['Permit to Work','Permit to Work'],
+  ['Confined Space','Confined Space'],['Contractor','Contractor Safety'],
+  ['Traffic','Road & Traffic Safety'],['Other','HSE Management System']
+];
+const DEPARTMENTS=['Production','Maintenance','Safety','Security','HR','Housekeeping','Stores & Dispatch'];
+const FINDING_TYPES=['Unsafe Act','Unsafe Condition','Near Miss','Non Compliance','Positive Observation'];
+const CRITICALITY=['High','Medium','Low'];
+const STATUSES=['Open','In Progress','Closed'];
+const CONSEQUENCES=['Personal Injury','Financial Penalty','Equipment Damage','Fire Hazard','Legal Compliance Violation'];
+/* short axis labels for the radar (Compliance Violation per chart spec) */
+const CONSEQ_SHORT={'Personal Injury':'Personal Injury','Financial Penalty':'Financial Penalty','Equipment Damage':'Equipment Damage','Fire Hazard':'Fire Hazard','Legal Compliance Violation':'Compliance Violation'};
+/* color cue per consequence — palette tints/shades only */
+const CONSEQ_CSS={'personalinjury':'cq-injury','financialpenalty':'cq-finance','equipmentdamage':'cq-equip','firehazard':'cq-fire','legalcomplianceviolation':'cq-legal'};
+const cqKey=v=>(v||'').toLowerCase().replace(/[^a-z]/g,'');
+const POSITIVE='Positive Observation';
+
+function reEsc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+
+/* Scan raw observation text for trigger keywords across the whole DB.
+   Selected category's hits rank first; its default is appended as a fallback option. */
+function matchLegal(text,dbCat){
+  const hay=' '+(text||'').toLowerCase()+' ';
+  const hits=[],seen=new Set();
+  function scan(cat){
+    const o=LEGAL_DB[cat];if(!o)return;
+    for(const kw in o.kw){
+      const rx=new RegExp('(^|[^a-z0-9])'+reEsc(kw.toLowerCase())+'[a-z]*','i');
+      if(rx.test(hay)){const ref=o.kw[kw];if(!seen.has(ref)){seen.add(ref);hits.push({ref,cat,kw});}}
+    }
+  }
+  if(dbCat)scan(dbCat);
+  for(const c in LEGAL_DB){if(c!==dbCat)scan(c);}
+  if(dbCat&&LEGAL_DB[dbCat]&&LEGAL_DB[dbCat].default){
+    const d=LEGAL_DB[dbCat].default;if(!seen.has(d))hits.push({ref:d,cat:dbCat,kw:'(category default)'});
+  }
+  return hits;
+}
+function riskLevel(r){if(!r)return['none','—',''];if(r<=4)return['low',r,'Low'];if(r<=12)return['med',r,'Medium'];return['high',r,'High'];}
+
+/* ============ STAGE 2 model + render ============ */
+let s2State={};
+function reviewStage2(){
+  const loc=document.getElementById('auditLocation').value||'—';
+  const plant=document.getElementById('pl1').value||'this site';
+  const aud=document.getElementById('audName').value||'the auditor';
+  document.getElementById('stage2Summary').textContent=
+    `${plant}, audited by ${aud} at ${loc}. Set department, severity and probability for each finding — risk rating and the legal dropdown fill in automatically from your observation text.`;
+  buildStage2();
+  go('s-stage2');
+}
+function buildStage2(){
+  const body=document.getElementById('s2Body'),empty=document.getElementById('s2Empty'),table=document.getElementById('s2Table');
+  body.innerHTML='';
+  if(!entries.length){empty.style.display='block';table.style.display='none';updateS2Stats();return;}
+  empty.style.display='none';table.style.display='';
+  entries.forEach((en,i)=>{
+    if(!s2State[en.id])s2State[en.id]={finding:'',dept:'',sev:'',prob:'',crit:'',cat:'',legal:'',status:'',conseq:''};
+    const st=s2State[en.id];
+    const tr=document.createElement('tr');tr.dataset.id=en.id;
+    const deptOpts=['<option value="">—</option>'].concat(DEPARTMENTS.map(d=>`<option${st.dept===d?' selected':''}>${d}</option>`)).join('');
+    const findOpts=['<option value="">— select —</option>'].concat(FINDING_TYPES.map(f=>`<option${st.finding===f?' selected':''}>${f}</option>`)).join('');
+    const critOpts=['<option value="">—</option>'].concat(CRITICALITY.map(c=>`<option${st.crit===c?' selected':''}>${c}</option>`)).join('');
+    const statusOpts=['<option value="">—</option>'].concat(STATUSES.map(s=>`<option${st.status===s?' selected':''}>${s}</option>`)).join('');
+    const num=f=>['<option value="">—</option>'].concat([1,2,3,4,5].map(v=>`<option${String(st[f])===String(v)?' selected':''}>${v}</option>`)).join('');
+    const catOpts=['<option value="">— select —</option>'].concat(OBS_CATEGORIES.map(c=>`<option value="${c[1]}"${st.cat===c[1]?' selected':''}>${c[0]}</option>`)).join('');
+    const conseqOpts=['<option value="">— select —</option>'].concat(CONSEQUENCES.map(c=>`<option${st.conseq===c?' selected':''}>${c}</option>`)).join('');
+    tr.innerHTML=`
+      <td class="sno">${String(i+1).padStart(2,'0')}</td>
+      <td class="obs-cell">
+        <input class="obs-edit obs-edit-loc" data-f="loc" value="${esc(en.loc)}" placeholder="Location" />
+        <textarea class="obs-edit obs-edit-txt" data-f="txt" rows="2" placeholder="What was observed?">${esc(en.txt)}</textarea>
+        ${en.photo?`<img src="${en.photo.dataUrl}" alt="evidence">`:''}
+      </td>
+      <td><select class="mini-select find-select" data-f="finding">${findOpts}</select></td>
+      <td><select class="mini-select" data-f="dept">${deptOpts}</select></td>
+      <td><select class="mini-select sev-prob" data-f="sev">${num('sev')}</select></td>
+      <td><select class="mini-select sev-prob" data-f="prob">${num('prob')}</select></td>
+      <td class="risk-col"></td>
+      <td><select class="mini-select" data-f="crit">${critOpts}</select></td>
+      <td><select class="mini-select conseq-select" data-f="conseq">${conseqOpts}</select></td>
+      <td><select class="mini-select" data-f="cat">${catOpts}</select></td>
+      <td class="legal-cell"></td>
+      <td><select class="mini-select" data-f="status">${statusOpts}</select></td>`;
+    body.appendChild(tr);
+    // editable observation + location -> write back to entry and re-run keyword matching live
+    tr.querySelectorAll('.obs-edit').forEach(inp=>{
+      inp.addEventListener('input',()=>{
+        if(inp.dataset.f==='loc')en.loc=inp.value;
+        else en.txt=inp.value;
+        recalcRow(en);updateS2Stats();
+      });
+    });
+    tr.querySelectorAll('select').forEach(sel=>{
+      sel.addEventListener('change',()=>{
+        const f=sel.dataset.f;st[f]=sel.value;
+        if(f==='cat')st.legal='';
+        recalcRow(en);updateS2Stats();
+      });
+    });
+    recalcRow(en);
+  });
+  updateS2Stats();
+  updateAnalyticsBadge();
+}
+function updateAnalyticsBadge(){
+  const el=document.getElementById('analyticsCount');if(!el)return;
+  el.textContent=entries.length?entries.length:'';
+}
+function recalcRow(en){
+  const tr=document.querySelector(`#s2Body tr[data-id="${en.id}"]`);if(!tr)return;
+  const st=s2State[en.id];
+  const positive=st.finding===POSITIVE;
+
+  // Positive observation -> clear & lock every other input on the row
+  if(positive){['dept','sev','prob','crit','cat','status','legal','conseq'].forEach(f=>st[f]='');}
+  tr.classList.toggle('positive-row',positive);
+  tr.querySelectorAll('select[data-f]').forEach(sel=>{
+    if(sel.dataset.f==='finding')return;
+    sel.disabled=positive; sel.classList.toggle('locked',positive);
+    if(positive)sel.value='';
+  });
+
+  // finding-type / criticality / status colour cues
+  tr.querySelector('select[data-f="finding"]').classList.toggle('f-positive',positive);
+  const csel=tr.querySelector('select[data-f="crit"]');
+  csel.className='mini-select'+(st.crit?' crit-'+st.crit.toLowerCase():'')+(positive?' locked':'');
+  const ssel=tr.querySelector('select[data-f="status"]');
+  ssel.className='mini-select'+(st.status?' status-'+st.status.toLowerCase().replace(/\s+/g,''):'')+(positive?' locked':'');
+  const qsel=tr.querySelector('select[data-f="conseq"]');
+  if(qsel)qsel.className='mini-select conseq-select'+(st.conseq?' '+CONSEQ_CSS[cqKey(st.conseq)]:'')+(positive?' locked':'');
+
+  // Risk rating
+  const riskCol=tr.querySelector('.risk-col');
+  if(positive){
+    riskCol.innerHTML=`<span class="risk-badge pos">★<span class="risk-cap">Positive</span></span>`;
+  }else{
+    const rating=(st.sev&&st.prob)?(+st.sev*+st.prob):0;
+    const[lvl,val,cap]=riskLevel(rating);
+    riskCol.innerHTML=rating
+      ?`<span class="risk-badge ${lvl}">${val}<span class="risk-cap">${cap}</span></span>`
+      :`<span class="risk-badge none">—</span>`;
+  }
+
+  // Legal requirement + dropdown
+  const cell=tr.querySelector('.legal-cell');
+  if(positive){
+    cell.innerHTML=`<div class="legal-req empty">Not applicable — positive observation.</div>`;
+    return;
+  }
+  const matches=matchLegal(((en.txt||'')+' '+(en.loc||'')),st.cat||'');
+  if(!matches.length){
+    cell.innerHTML=`<div class="legal-req empty">No legal match yet — pick a category, or add detail to the observation.</div>`;
+    return;
+  }
+  if(!st.legal||!matches.some(m=>m.ref===st.legal))st.legal=matches[0].ref;
+  const chosen=matches.find(m=>m.ref===st.legal)||matches[0];
+  const note=(chosen.kw&&chosen.kw!=='(category default)')
+    ?`<div class="legal-match-note">matched on <span class="kw-chip">${esc(chosen.kw)}</span> · ${esc(chosen.cat)}</div>`
+    :`<div class="legal-match-note">${esc(chosen.cat)} · category default</div>`;
+  const opts=matches.map(m=>`<option value="${esc(m.ref)}"${m.ref===st.legal?' selected':''}>${esc(m.ref)}${(m.kw&&m.kw!=='(category default)')?'  ·  ['+esc(m.kw)+']':'  ·  [default]'}</option>`).join('');
+  cell.innerHTML=`<div class="legal-req">${esc(chosen.ref)}</div>${note}<select class="legal-select" data-f="legal">${opts}</select>`;
+  const sel=cell.querySelector('.legal-select');
+  sel.addEventListener('change',()=>{st.legal=sel.value;recalcRow(en);updateS2Stats();});
+}
+function updateS2Stats(){
+  let high=0,mapped=0;
+  entries.forEach(en=>{const st=s2State[en.id]||{};const r=(st.sev&&st.prob)?st.sev*st.prob:0;if(r>=15)high++;if(st.legal)mapped++;});
+  document.getElementById('s2Count').textContent=entries.length;
+  document.getElementById('s2High').textContent=high;
+  document.getElementById('s2Mapped').textContent=mapped;
+  if(typeof scheduleCharts==='function'&&document.getElementById('s-analytics').classList.contains('active'))scheduleCharts();
+}
+
+/* ============ CLEAR ALL · scrape-away animation ============ */
+const clearAllBtn=document.getElementById('clearAllBtn');
+clearAllBtn.addEventListener('click',clearAll);
+function clearAll(){
+  const dirty=entries.length||document.getElementById('obsLocation').value||document.getElementById('obsText').value||document.getElementById('auditLocation').value;
+  if(dirty&&!confirm('Clear every Stage 1 field, the attached photo and all logged observations? This cannot be undone.'))return;
+  const reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const doReset=()=>{
+    ['auditLocation','pl1','pl2','pl3','pl4','pl5','pl6','pl7'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    auditDate.valueAsDate=new Date();checkGate();
+    document.getElementById('obsLocation').value='';document.getElementById('obsText').value='';
+    pendingPhoto=null;lastFile=null;photoDrop.classList.remove('has');photoLabel.textContent='Attach a photo of the observation';
+    entries.length=0;render();s2State={};
+    toast('Stage 1 cleared — fresh start.','ok');
+  };
+  if(reduce){doReset();return;}
+  const ov=document.getElementById('scrape'),panels=document.querySelectorAll('#s-observe .panel');
+  panels.forEach(p=>p.classList.add('scraping'));
+  ov.classList.add('on');
+  setTimeout(doReset,430);
+  setTimeout(()=>{ov.classList.remove('on');panels.forEach(p=>p.classList.remove('scraping'));},900);
+}
+
+/* ============ EXPORT · flight launch -> Stage 2 ============ */
+const FLIER_PLANE=`<path d="M4 32 60 6 40 60 32 38 54 14 28 34Z" fill="var(--accent)" stroke="#0e2b27" stroke-width="1.5" stroke-linejoin="round"/><path d="M32 38 40 60 4 32Z" fill="#0e2b27" opacity=".25"/>`;
+const FLIER_ROCKET=`<g><path d="M32 4c10 6 14 16 14 28l-6 8H24l-6-8C18 20 22 10 32 4Z" fill="var(--accent)" stroke="#0e2b27" stroke-width="1.5"/><circle cx="32" cy="24" r="5" fill="#0e2b27" opacity=".6"/><path d="M24 40l-8 14 12-6M40 40l8 14-12-6" fill="#efc71d" stroke="#0e2b27" stroke-width="1.2"/><path d="M28 48h8l-3 10h-2z" fill="#d9614c"/></g>`;
+/* ---- single export button + format dropdown ---- */
+function toggleExportMenu(e){
+  if(e){e.stopPropagation();}
+  const pop=document.getElementById('exportPop'),trig=document.getElementById('exportTrigger');
+  if(pop.hasAttribute('hidden')){
+    pop.removeAttribute('hidden');trig.setAttribute('aria-expanded','true');trig.classList.add('open');
+  }else{closeExportMenu();}
+}
+function closeExportMenu(){
+  const pop=document.getElementById('exportPop'),trig=document.getElementById('exportTrigger');
+  if(pop&&!pop.hasAttribute('hidden')){pop.setAttribute('hidden','');trig.setAttribute('aria-expanded','false');trig.classList.remove('open');}
+}
+function chooseExport(type){closeExportMenu();launchExport(type,null);}
+document.addEventListener('click',e=>{ if(!e.target.closest('#exportMenu'))closeExportMenu(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape')closeExportMenu(); });
+
+function launchExport(type,e){
+  const onS2=document.getElementById('s-stage2').classList.contains('active');
+  if(e&&e.currentTarget&&e.currentTarget.classList&&e.currentTarget.classList.contains('export-btn')){
+    const b=e.currentTarget;b.classList.add('launching');setTimeout(()=>b.classList.remove('launching'),520);
+  }
+  if(!entries.length&&type!=='none'){
+    if(onS2){toast('No observations to export yet.','warn');return;}
+    if(!confirm('No observations are logged yet. Continue to Stage 2 anyway?'))return;
+  }
+  if(type==='excel')exportXLSX();
+  else if(type==='pdf'){ if(document.getElementById('s-stage2').classList.contains('active'))exportPDFdoc(); else exportPDF(); }
+  else if(type==='ppt')exportPPTX();
+
+  // On Stage 2 the export happens in place — no flight, no navigation.
+  if(onS2)return;
+
+  const reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(type==='none'||reduce){reviewStage2();return;}
+
+  const flier=document.getElementById('flier'),svg=document.getElementById('flierSvg');
+  const isRocket=type==='pdf';
+  svg.innerHTML=isRocket?FLIER_ROCKET:FLIER_PLANE;
+  const accent=type==='excel'?'#5fbf8f':type==='pdf'?'#ef9b8c':type==='ppt'?'#efc71d':'#bbc8ca';
+  svg.style.setProperty('--accent',accent);
+  flier.className='flier '+(isRocket?'rocket':'plane');
+  void flier.offsetWidth;
+  flier.classList.add('go');
+  trailLoop(flier,accent,1150);
+  let done=false;const finish=()=>{if(done)return;done=true;flier.classList.remove('go');reviewStage2();};
+  flier.addEventListener('animationend',finish,{once:true});
+  setTimeout(finish,1400);
+}
+function trailLoop(flier,color,dur){
+  const start=performance.now();
+  (function step(now){
+    if(now-start>dur)return;
+    const r=flier.getBoundingClientRect();
+    if(r.width){
+      const t=document.createElement('span');t.className='trail';
+      t.style.left=(r.left+r.width/2-4)+'px';t.style.top=(r.top+r.height/2-4)+'px';t.style.background=color;
+      document.body.appendChild(t);setTimeout(()=>t.remove(),900);
+    }
+    if(now-start<dur-150)setTimeout(()=>requestAnimationFrame(step),55);
+  })(start);
+}
+
+/* ============ EXPORT FILE BUILDERS (base infrastructure) ============ */
+function auditMeta(){return{date:document.getElementById('auditDate').value||'',loc:document.getElementById('auditLocation').value||'',auditor:document.getElementById('audName').value||'',plant:document.getElementById('pl1').value||''};}
+function exportCSV(){
+  const m=auditMeta();
+  const head=['SNO','Location','Observation','Finding Type','Department','Severity','Probability','Risk Rating','Criticality','Observation Category','Legal Requirement','Status'];
+  const rows=entries.map((en,i)=>{const st=s2State[en.id]||{};const positive=st.finding===POSITIVE;const rating=positive?'N/A':((st.sev&&st.prob)?st.sev*st.prob:'');return[i+1,en.loc||'',en.txt||'',st.finding||'',st.dept||'',st.sev||'',st.prob||'',rating,st.crit||'',st.cat||'',positive?'N/A':(st.legal||''),st.status||''];});
+  const q=v=>{v=(v==null?'':String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const lines=['Aditup Safety Audit',`Date,${q(m.date)}`,`Location,${q(m.loc)}`,`Auditor,${q(m.auditor)}`,`Plant,${q(m.plant)}`,'',head.join(',')].concat(rows.map(r=>r.map(q).join(',')));
+  downloadBlob(lines.join('\n'),`aditup-audit-${m.date||'export'}.csv`,'text/csv;charset=utf-8;');
+  toast('Excel CSV downloaded.','ok');
+}
+function exportPDF(){
+  const m=auditMeta();const w=window.open('','_blank');
+  if(!w){toast('Allow pop-ups to generate the PDF report.','warn');return;}
+  const rowsHtml=entries.map((en,i)=>{const st=s2State[en.id]||{};const positive=st.finding===POSITIVE;const rating=positive?'N/A':((st.sev&&st.prob)?st.sev*st.prob:'—');
+    return `<tr><td>${i+1}</td><td>${esc(en.loc)}</td><td>${esc(en.txt)}</td><td>${esc(st.finding||'—')}</td><td>${esc(st.dept||'—')}</td><td style="text-align:center">${positive?'—':(st.sev||'—')}</td><td style="text-align:center">${positive?'—':(st.prob||'—')}</td><td style="text-align:center">${rating}</td><td>${esc(st.crit||'—')}</td><td>${esc(st.cat||'—')}</td><td>${positive?'N/A':esc(st.legal||'—')}</td><td>${esc(st.status||'—')}</td></tr>`;}).join('');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Aditup Audit Report</title><style>body{font-family:Arial,Helvetica,sans-serif;color:#183934;padding:28px}h1{color:#307268;margin:0 0 4px}.meta{color:#555;font-size:13px;margin-bottom:18px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#307268;color:#fff;text-align:left;padding:7px}td{padding:6px 7px;border-bottom:1px solid #ddd;vertical-align:top}@media print{button{display:none}}</style></head><body><h1>Aditup Safety Audit</h1><div class="meta">'+esc(m.plant||'Site')+' &middot; '+esc(m.loc)+' &middot; '+esc(m.date)+' &middot; Auditor: '+esc(m.auditor||'—')+'</div><table><thead><tr><th>SNO</th><th>Location</th><th>Observation</th><th>Finding</th><th>Dept</th><th>Sev</th><th>Prob</th><th>Risk</th><th>Criticality</th><th>Category</th><th>Legal requirement</th><th>Status</th></tr></thead><tbody>'+(rowsHtml||'<tr><td colspan="12">No observations.</td></tr>')+'</tbody></table><button onclick="window.print()" style="margin-top:20px;padding:10px 18px;background:#efc71d;border:none;border-radius:8px;font-weight:700;cursor:pointer">Print / Save as PDF</button></body></html>');
+  w.document.close();
+  toast('PDF report opened — use Print / Save as PDF.','ok');
+}
+function downloadBlob(content,name,mime){const blob=new Blob([content],{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},400);}
+
+/* ============ TOAST ============ */
+function toast(msg,kind){
+  const stack=document.getElementById('toastStack');
+  const t=document.createElement('div');t.className='toast '+(kind||'ok');t.textContent=msg;
+  stack.appendChild(t);
+  setTimeout(()=>{t.style.transition='opacity .35s,transform .35s';t.style.opacity='0';t.style.transform='translateY(8px)';setTimeout(()=>t.remove(),360);},3200);
+}
+
+
+/* ===== INJECTED: STAGE-2 ANALYTICS ===== */
+/* ====================================================================
+   ADITUP · STAGE-2 ANALYTICS + COMPREHENSIVE EXPORT
+   Dependency-free charts AND exports (inline SVG; offline xlsx/pptx/pdf).
+   ==================================================================== */
+
+/* ---------- palette (locked) ---------- */
+const CPAL={green:'#307268',greenDeep:'#183934',yellow:'#efc71d',sage:'#bbc8ca',sand:'#e2d2bf',cream:'#f9f3d9'};
+const FIND_FILL={'Unsafe Act':'#d9614c','Unsafe Condition':'#efc71d','Near Miss':'#307268','Non Compliance':'#1f4f48','Positive Observation':'#5fbf8f','(unset)':'#5b6f6b'};
+const FIND_TEXT={'Unsafe Act':'#fff','Unsafe Condition':'#183934','Near Miss':'#f9f3d9','Non Compliance':'#f9f3d9','Positive Observation':'#0e2b27','(unset)':'#e2d2bf'};
+const _S2=en=>(s2State[en.id]||{});
+
+/* ---------- shared tooltip ---------- */
+let _tip;
+function chartTip(){ if(!_tip){_tip=document.createElement('div');_tip.className='chart-tip';_tip.hidden=true;document.body.appendChild(_tip);} return _tip; }
+function showTip(html,x,y){const t=chartTip();t.innerHTML=html;t.hidden=false;const pad=14;let nx=x+pad,ny=y+pad;const r=t.getBoundingClientRect();if(nx+r.width>innerWidth-8)nx=x-r.width-pad;if(ny+r.height>innerHeight-8)ny=y-r.height-pad;t.style.left=nx+'px';t.style.top=ny+'px';}
+function hideTip(){if(_tip)_tip.hidden=true;}
+
+/* ===================== AGGREGATION ===================== */
+function aggFindings(){const m={};entries.forEach(en=>{const f=_S2(en).finding||'(unset)';m[f]=(m[f]||0)+1;});
+  return Object.entries(m).map(([k,v])=>({label:k,value:v})).filter(d=>d.value>0).sort((a,b)=>b.value-a.value);}
+function usedCats(){const s=[];entries.forEach(en=>{const c=_S2(en).cat;if(c&&!s.includes(c))s.push(c);});return s;}
+function usedDepts(){const s=[];entries.forEach(en=>{const d=_S2(en).dept;if(d&&!s.includes(d))s.push(d);});return s;}
+function aggHeat(cats,depts){const g=cats.map(()=>depts.map(()=>0));entries.forEach(en=>{const st=_S2(en);if(st.finding===POSITIVE)return;const ci=cats.indexOf(st.cat),di=depts.indexOf(st.dept);if(ci>=0&&di>=0)g[ci][di]++;});return g;}
+/* Radar now plots the 5 impact consequences as observation counts.
+   val is normalized to the max count so the shape stays readable;
+   raw count is kept for labels/tooltips. Positives excluded. */
+function aggRadar(){
+  const counts={}; CONSEQUENCES.forEach(c=>counts[c]=0);
+  let any=false;
+  entries.forEach(en=>{const st=_S2(en);if(st.finding===POSITIVE)return;if(st.conseq&&counts.hasOwnProperty(st.conseq)){counts[st.conseq]++;any=true;}});
+  if(!any)return null;
+  const max=Math.max(1,...CONSEQUENCES.map(c=>counts[c]));
+  return CONSEQUENCES.map(c=>({axis:CONSEQ_SHORT[c]||c,full:c,count:counts[c],val:counts[c]/max}));
+}
+
+/* ===================== TREEMAP ===================== */
+function treemapCells(items,x,y,w,h){
+  // slice-and-dice alternating direction for readable proportions
+  const total=items.reduce((s,i)=>s+i.value,0)||1; const cells=[];
+  let cx=x,cy=y,cw=w,ch=h,rem=items.slice(),remTot=total,horiz=w>=h;
+  while(rem.length){
+    const it=rem.shift();
+    const frac=it.value/remTot;
+    if(rem.length===0){cells.push({...it,x:cx,y:cy,w:cw,h:ch});break;}
+    if(horiz){const seg=cw*frac;cells.push({...it,x:cx,y:cy,w:seg,h:ch});cx+=seg;cw-=seg;}
+    else{const seg=ch*frac;cells.push({...it,x:cx,y:cy,w:cw,h:seg});cy+=seg;ch-=seg;}
+    remTot-=it.value; horiz=cw>=ch;
+  }
+  return cells;
+}
+function renderTreemap(host){
+  const data=aggFindings(); const W=host.clientWidth||520, H=300;
+  if(!data.length){host.innerHTML=emptyChart('No findings logged yet.');return;}
+  const total=data.reduce((s,d)=>s+d.value,0);
+  const cells=treemapCells(data,4,4,W-8,H-8);
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Findings treemap" font-family="Montserrat,sans-serif">`;
+  cells.forEach(c=>{
+    const fill=FIND_FILL[c.label]||CPAL.green, tcol=FIND_TEXT[c.label]||CPAL.cream;
+    const pct=Math.round(c.value/total*100);
+    const big=c.w>78&&c.h>46;
+    svg+=`<g class="tm-cell" tabindex="0" data-l="${esc(c.label)}" data-v="${c.value}" data-p="${pct}">
+      <rect x="${c.x.toFixed(1)}" y="${c.y.toFixed(1)}" width="${Math.max(0,c.w-3).toFixed(1)}" height="${Math.max(0,c.h-3).toFixed(1)}" rx="9" fill="${fill}"/>
+      ${big?`<text x="${(c.x+12).toFixed(1)}" y="${(c.y+24).toFixed(1)}" fill="${tcol}" font-size="13" font-weight="800">${esc(c.label)}</text>
+        <text x="${(c.x+12).toFixed(1)}" y="${(c.y+44).toFixed(1)}" fill="${tcol}" font-size="18" font-weight="800" opacity=".92">${c.value}<tspan font-size="11" font-weight="600" dx="5" opacity=".8">${pct}%</tspan></text>`:''}
+    </g>`;
+  });
+  svg+=`</svg>`; host.innerHTML=svg;
+  host.querySelectorAll('.tm-cell').forEach(g=>{
+    const move=e=>{const p=e.touches?e.touches[0]:e;showTip(`<b>${g.dataset.l}</b><span>${g.dataset.v} finding${g.dataset.v==1?'':'s'} · ${g.dataset.p}%</span>`,p.clientX,p.clientY);};
+    g.addEventListener('mousemove',move);g.addEventListener('mouseleave',hideTip);
+    g.addEventListener('focus',()=>{const r=g.getBoundingClientRect();showTip(`<b>${g.dataset.l}</b><span>${g.dataset.v} · ${g.dataset.p}%</span>`,r.left+r.width/2,r.top+r.height/2);});
+    g.addEventListener('blur',hideTip);
+  });
+}
+
+/* ===================== HEATMAP ===================== */
+function heatColor(t){ // 0..1 -> sand -> green -> deep, palette only
+  if(t<=0) return 'rgba(187,200,202,.10)';
+  // interpolate cream->yellow->green->greenDeep
+  const stops=[[249,243,217],[239,199,29],[48,114,104],[24,57,52]];
+  const seg=t*(stops.length-1); const i=Math.min(stops.length-2,Math.floor(seg)); const f=seg-i;
+  const a=stops[i],b=stops[i+1]; const c=a.map((v,k)=>Math.round(v+(b[k]-v)*f));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+function renderHeatmap(host){
+  const cats=usedCats(), depts=usedDepts();
+  if(!cats.length||!depts.length){host.innerHTML=emptyChart('Assign category + department to see density.');return;}
+  const grid=aggHeat(cats,depts); const max=Math.max(1,...grid.flat());
+  const padL=150,padT=12,padB=70, cellH=34, gap=5;
+  const W=host.clientWidth||560; const colW=Math.max(40,(W-padL-10)/depts.length);
+  const H=padT+cats.length*(cellH+gap)+padB;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Location density heatmap" font-family="Montserrat,sans-serif">`;
+  cats.forEach((cat,ci)=>{
+    const y=padT+ci*(cellH+gap);
+    svg+=`<text x="${padL-10}" y="${y+cellH/2+4}" text-anchor="end" fill="${CPAL.sage}" font-size="11" font-weight="600">${esc(cat.length>20?cat.slice(0,19)+'…':cat)}</text>`;
+    depts.forEach((d,di)=>{
+      const x=padL+di*colW, v=grid[ci][di], t=v/max;
+      const tc=t>.55?CPAL.cream:CPAL.greenDeep;
+      svg+=`<g class="hm-cell" tabindex="0" data-c="${esc(cat)}" data-d="${esc(d)}" data-v="${v}">
+        <rect x="${x}" y="${y}" width="${colW-5}" height="${cellH}" rx="7" fill="${heatColor(t)}" stroke="rgba(187,200,202,.15)"/>
+        ${v?`<text x="${x+(colW-5)/2}" y="${y+cellH/2+4}" text-anchor="middle" fill="${tc}" font-size="12" font-weight="800">${v}</text>`:''}
+      </g>`;
+    });
+  });
+  depts.forEach((d,di)=>{const x=padL+di*colW+(colW-5)/2;const yy=padT+cats.length*(cellH+gap)+14;
+    svg+=`<text x="${x}" y="${yy}" text-anchor="end" fill="${CPAL.sage}" font-size="10.5" font-weight="600" transform="rotate(-35 ${x} ${yy})">${esc(d)}</text>`;});
+  svg+=`</svg>`; host.innerHTML=svg;
+  host.querySelectorAll('.hm-cell').forEach(g=>{
+    const move=e=>{const p=e.touches?e.touches[0]:e;showTip(`<b>${g.dataset.c}</b><span>${g.dataset.d}: ${g.dataset.v} observation${g.dataset.v==1?'':'s'}</span>`,p.clientX,p.clientY);};
+    g.addEventListener('mousemove',move);g.addEventListener('mouseleave',hideTip);
+    g.addEventListener('focus',()=>{const r=g.getBoundingClientRect();showTip(`<b>${g.dataset.c}</b><span>${g.dataset.d}: ${g.dataset.v}</span>`,r.left+r.width/2,r.top);});
+    g.addEventListener('blur',hideTip);
+  });
+}
+
+/* ===================== RADAR ===================== */
+function renderRadar(host){
+  const data=aggRadar();
+  if(!data){host.innerHTML=emptyChart('Pick a consequence on each row to plot the impact mix.');return;}
+  const W=host.clientWidth||440,H=320,cx=W/2,cy=H/2+6,R=Math.min(W,H)/2-58;
+  const N=data.length, ang=i=>-Math.PI/2+i*2*Math.PI/N;
+  const pt=(i,r)=>[cx+Math.cos(ang(i))*R*r, cy+Math.sin(ang(i))*R*r];
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Impact radar" font-family="Montserrat,sans-serif">`;
+  [.25,.5,.75,1].forEach(r=>{let p='';for(let i=0;i<N;i++){const[x,y]=pt(i,r);p+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);}svg+=`<path d="${p}Z" fill="none" stroke="rgba(187,200,202,.18)" stroke-width="1"/>`;});
+  for(let i=0;i<N;i++){const[x,y]=pt(i,1);svg+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(187,200,202,.18)"/>`;}
+  let poly='';data.forEach((d,i)=>{const[x,y]=pt(i,Math.max(.02,d.val));poly+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);});
+  svg+=`<path d="${poly}Z" fill="rgba(239,199,29,.22)" stroke="${CPAL.yellow}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  data.forEach((d,i)=>{const[x,y]=pt(i,Math.max(.02,d.val));
+    svg+=`<circle class="rd-pt" tabindex="0" data-a="${esc(d.axis)}" data-c="${d.count}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${CPAL.yellow}" stroke="${CPAL.greenDeep}" stroke-width="1.5"/>`;});
+  data.forEach((d,i)=>{const[x,y]=pt(i,1.16);
+    const words=String(d.axis).split(' ');
+    const lines=words.length>1?[words[0],words.slice(1).join(' ')]:[d.axis];
+    const dyStart=lines.length>1?-4:0;
+    let txt=`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" fill="${CPAL.sage}" font-size="10.5" font-weight="700">`;
+    lines.forEach((ln,k)=>{txt+=`<tspan x="${x.toFixed(1)}" dy="${k===0?dyStart:11}">${esc(ln)}</tspan>`;});
+    txt+=`</text>`; svg+=txt;});
+  svg+=`</svg>`; host.innerHTML=svg;
+  host.querySelectorAll('.rd-pt').forEach(c=>{
+    const lbl=`${c.dataset.c} observation${c.dataset.c==1?'':'s'}`;
+    c.addEventListener('mousemove',e=>showTip(`<b>${c.dataset.a}</b><span>${lbl}</span>`,e.clientX,e.clientY));
+    c.addEventListener('mouseleave',hideTip);
+    c.addEventListener('focus',()=>{const r=c.getBoundingClientRect();showTip(`<b>${c.dataset.a}</b><span>${lbl}</span>`,r.left,r.top);});
+    c.addEventListener('blur',hideTip);
+  });
+}
+
+/* ===================== BUBBLE (severity) ===================== */
+/* x=probability(1-5), y=severity(1-5), r∝risk. Positives excluded. */
+function renderBubble(host){
+  const pts=[];
+  entries.forEach(en=>{const st=_S2(en);if(st.finding===POSITIVE)return;if(!st.sev||!st.prob)return;
+    pts.push({sev:+st.sev,prob:+st.prob,risk:+st.sev*+st.prob,loc:en.loc||''});});
+  if(!pts.length){host.innerHTML=emptyChart('Rate severity & probability to plot the bubble chart.');return;}
+  const W=host.clientWidth||520,H=300,padL=44,padB=40,padT=14,padR=18;
+  const plotW=W-padL-padR,plotH=H-padT-padB;
+  const sx=v=>padL+(v-0.5)/5*plotW, sy=v=>padT+plotH-(v-0.5)/5*plotH;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Severity bubble chart" font-family="Montserrat,sans-serif">`;
+  for(let g=1;g<=5;g++){svg+=`<line x1="${sx(g)}" y1="${padT}" x2="${sx(g)}" y2="${padT+plotH}" stroke="rgba(187,200,202,.10)"/>`;
+    svg+=`<line x1="${padL}" y1="${sy(g)}" x2="${padL+plotW}" y2="${sy(g)}" stroke="rgba(187,200,202,.10)"/>`;
+    svg+=`<text x="${sx(g)}" y="${H-padB+18}" text-anchor="middle" fill="${CPAL.sage}" font-size="10.5" font-weight="600">${g}</text>`;
+    svg+=`<text x="${padL-10}" y="${sy(g)+4}" text-anchor="end" fill="${CPAL.sage}" font-size="10.5" font-weight="600">${g}</text>`;}
+  svg+=`<text x="${padL+plotW/2}" y="${H-4}" text-anchor="middle" fill="${CPAL.sage}" font-size="11" font-weight="700">Probability →</text>`;
+  svg+=`<text x="14" y="${padT+plotH/2}" text-anchor="middle" fill="${CPAL.sage}" font-size="11" font-weight="700" transform="rotate(-90 14 ${padT+plotH/2})">Severity →</text>`;
+  // jitter overlapping points slightly so equal sev/prob don't fully overlap
+  const seen={};
+  pts.forEach(p=>{const k=p.sev+'_'+p.prob;const c=seen[k]=(seen[k]||0)+1;const j=(c-1)*6;
+    const x=sx(p.prob)+(c>1?((c%2?1:-1)*j):0), y=sy(p.sev);
+    const rr=6+p.risk/25*16; const fill=p.risk>=15?'#d9614c':p.risk>=5?CPAL.yellow:'#5fbf8f';
+    svg+=`<circle class="bub-pt" tabindex="0" data-l="${esc(p.loc)}" data-s="${p.sev}" data-p="${p.prob}" data-r="${p.risk}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rr.toFixed(1)}" fill="${fill}" fill-opacity=".55" stroke="${fill}" stroke-width="1.5"/>`;});
+  svg+=`</svg>`;host.innerHTML=svg;
+  host.querySelectorAll('.bub-pt').forEach(c=>{
+    const tip=`<b>${c.dataset.l||'Observation'}</b><span>Sev ${c.dataset.s} · Prob ${c.dataset.p} · Risk ${c.dataset.r}</span>`;
+    c.addEventListener('mousemove',e=>showTip(tip,e.clientX,e.clientY));c.addEventListener('mouseleave',hideTip);
+    c.addEventListener('focus',()=>{const r=c.getBoundingClientRect();showTip(tip,r.left+r.width/2,r.top);});c.addEventListener('blur',hideTip);
+  });
+}
+
+/* ===================== DONUT (closure status) ===================== */
+function renderDonut(host){
+  const m={Open:0,'In Progress':0,Closed:0};
+  entries.forEach(en=>{const st=_S2(en);if(st.finding===POSITIVE)return;if(st.status&&m.hasOwnProperty(st.status))m[st.status]++;});
+  const total=m.Open+m['In Progress']+m.Closed;
+  if(!total){host.innerHTML=emptyChart('Set a status on observations to see closure mix.');return;}
+  const colors={Open:'#d9614c','In Progress':CPAL.yellow,Closed:'#5fbf8f'};
+  const W=host.clientWidth||520,H=300,cx=W/2,cy=H/2,R=Math.min(W,H)/2-46,r0=R*0.58;
+  let a0=-Math.PI/2,svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Closure status donut" font-family="Montserrat,sans-serif">`;
+  Object.keys(m).forEach(k=>{const v=m[k];if(!v)return;const frac=v/total,a1=a0+frac*2*Math.PI;
+    const large=frac>0.5?1:0;
+    const x0=cx+Math.cos(a0)*R,y0=cy+Math.sin(a0)*R,x1=cx+Math.cos(a1)*R,y1=cy+Math.sin(a1)*R;
+    const xi1=cx+Math.cos(a1)*r0,yi1=cy+Math.sin(a1)*r0,xi0=cx+Math.cos(a0)*r0,yi0=cy+Math.sin(a0)*r0;
+    svg+=`<path class="dn-seg" tabindex="0" data-k="${k}" data-v="${v}" data-p="${Math.round(frac*100)}" d="M${x0.toFixed(1)} ${y0.toFixed(1)} A${R} ${R} 0 ${large} 1 ${x1.toFixed(1)} ${y1.toFixed(1)} L${xi1.toFixed(1)} ${yi1.toFixed(1)} A${r0} ${r0} 0 ${large} 0 ${xi0.toFixed(1)} ${yi0.toFixed(1)} Z" fill="${colors[k]}" stroke="${CPAL.greenDeep}" stroke-width="2"/>`;
+    a0=a1;});
+  svg+=`<text x="${cx}" y="${cy-4}" text-anchor="middle" fill="${CPAL.cream}" font-size="30" font-weight="800">${total}</text>`;
+  svg+=`<text x="${cx}" y="${cy+18}" text-anchor="middle" fill="${CPAL.sage}" font-size="11" font-weight="600">assessed</text>`;
+  svg+=`</svg>`;
+  // legend
+  let leg='<div class="legend">';Object.keys(m).forEach(k=>{leg+=`<span><i style="background:${colors[k]}"></i>${k} · ${m[k]}</span>`;});leg+='</div>';
+  host.innerHTML=svg+leg;
+  host.querySelectorAll('.dn-seg').forEach(s=>{
+    const tip=`<b>${s.dataset.k}</b><span>${s.dataset.v} · ${s.dataset.p}%</span>`;
+    s.addEventListener('mousemove',e=>showTip(tip,e.clientX,e.clientY));s.addEventListener('mouseleave',hideTip);
+    s.addEventListener('focus',()=>{const r=s.getBoundingClientRect();showTip(tip,r.left+r.width/2,r.top+r.height/2);});s.addEventListener('blur',hideTip);
+  });
+}
+
+/* ===================== STACKED BAR (risk distribution by dept) ===================== */
+function renderStacked(host){
+  const depts=usedDepts();
+  if(!depts.length){host.innerHTML=emptyChart('Assign departments + risk to see distribution.');return;}
+  const data=depts.map(d=>({d,low:0,med:0,high:0}));
+  entries.forEach(en=>{const st=_S2(en);if(st.finding===POSITIVE)return;const di=depts.indexOf(st.dept);if(di<0)return;
+    const r=(st.sev&&st.prob)?+st.sev*+st.prob:0;if(!r)return;if(r<=4)data[di].low++;else if(r<=12)data[di].med++;else data[di].high++;});
+  const max=Math.max(1,...data.map(o=>o.low+o.med+o.high));
+  const W=host.clientWidth||520,H=312,padL=40,padB=68,padT=14,padR=14;
+  const plotH=H-padT-padB,plotW=W-padL-padR,bw=Math.min(60,plotW/depts.length*0.62),gap=plotW/depts.length;
+  const colors={low:'#5fbf8f',med:CPAL.yellow,high:'#d9614c'};
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Risk distribution stacked bar" font-family="Montserrat,sans-serif">`;
+  for(let g=0;g<=max;g+=Math.ceil(max/4)||1){const y=padT+plotH-g/max*plotH;svg+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="rgba(187,200,202,.10)"/><text x="${padL-8}" y="${y+4}" text-anchor="end" fill="${CPAL.sage}" font-size="10" font-weight="600">${g}</text>`;}
+  data.forEach((o,i)=>{const x=padL+i*gap+(gap-bw)/2;let yb=padT+plotH;
+    [['high',o.high],['med',o.med],['low',o.low]].forEach(([k,v])=>{if(!v)return;const h=v/max*plotH;yb-=h;
+      svg+=`<rect class="st-seg" tabindex="0" data-d="${esc(o.d)}" data-k="${k}" data-v="${v}" x="${x.toFixed(1)}" y="${yb.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" fill="${colors[k]}" rx="3"/>`;});
+    const lbl=o.d.length>10?o.d.slice(0,9)+'…':o.d;
+    svg+=`<text x="${(x+bw/2).toFixed(1)}" y="${padT+plotH+18}" text-anchor="middle" fill="${CPAL.sage}" font-size="10" font-weight="600" transform="rotate(-22 ${(x+bw/2).toFixed(1)} ${padT+plotH+18})">${esc(lbl)}</text>`;});
+  svg+=`</svg>`;
+  let leg='<div class="legend"><span><i style="background:#5fbf8f"></i>Low</span><span><i style="background:'+CPAL.yellow+'"></i>Medium</span><span><i style="background:#d9614c"></i>High</span></div>';
+  host.innerHTML=svg+leg;
+  host.querySelectorAll('.st-seg').forEach(s=>{const tip=`<b>${s.dataset.d}</b><span>${s.dataset.k[0].toUpperCase()+s.dataset.k.slice(1)} risk: ${s.dataset.v}</span>`;
+    s.addEventListener('mousemove',e=>showTip(tip,e.clientX,e.clientY));s.addEventListener('mouseleave',hideTip);
+    s.addEventListener('focus',()=>{const r=s.getBoundingClientRect();showTip(tip,r.left+r.width/2,r.top);});s.addEventListener('blur',hideTip);});
+}
+
+/* ===================== HORIZONTAL BAR (category load) ===================== */
+function renderHBar(host){
+  const m={};entries.forEach(en=>{const st=_S2(en);if(st.finding===POSITIVE)return;if(!st.cat)return;m[st.cat]=(m[st.cat]||0)+1;});
+  const data=Object.entries(m).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);
+  if(!data.length){host.innerHTML=emptyChart('Assign categories to observations to see load.');return;}
+  const max=Math.max(...data.map(o=>o.v));
+  const W=host.clientWidth||520,rowH=30,padL=140,padR=40,padT=8,H=padT*2+data.length*rowH;
+  const plotW=W-padL-padR;
+  // green ramp by rank, palette only
+  const shade=i=>{const t=data.length>1?i/(data.length-1):0;const a=[48,114,104],b=[24,57,52];return `rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`;};
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Category load horizontal bar" font-family="Montserrat,sans-serif">`;
+  data.forEach((o,i)=>{const y=padT+i*rowH;const bw=o.v/max*plotW;
+    const lbl=o.k.length>20?o.k.slice(0,19)+'…':o.k;
+    svg+=`<text x="${padL-10}" y="${y+rowH/2+4}" text-anchor="end" fill="${CPAL.sage}" font-size="11" font-weight="600">${esc(lbl)}</text>`;
+    svg+=`<rect class="hb-seg" tabindex="0" data-k="${esc(o.k)}" data-v="${o.v}" x="${padL}" y="${y+5}" width="${Math.max(2,bw).toFixed(1)}" height="${rowH-12}" rx="5" fill="${shade(i)}"/>`;
+    svg+=`<text x="${padL+Math.max(2,bw)+8}" y="${y+rowH/2+4}" fill="${CPAL.cream}" font-size="11" font-weight="800">${o.v}</text>`;});
+  svg+=`</svg>`;host.innerHTML=svg;
+  host.querySelectorAll('.hb-seg').forEach(s=>{const tip=`<b>${s.dataset.k}</b><span>${s.dataset.v} observation${s.dataset.v==1?'':'s'}</span>`;
+    s.addEventListener('mousemove',e=>showTip(tip,e.clientX,e.clientY));s.addEventListener('mouseleave',hideTip);
+    s.addEventListener('focus',()=>{const r=s.getBoundingClientRect();showTip(tip,r.left,r.top);});s.addEventListener('blur',hideTip);});
+}
+
+function emptyChart(msg){return `<div class="chart-empty">${esc(msg)}</div>`;}
+
+/* render every chart that is present in the DOM (Stage 2 has none now; analytics has all 7) */
+function renderCharts(){
+  const draw=(id,fn)=>{const el=document.getElementById(id);if(el)fn(el);};
+  draw('chartBubble',renderBubble);
+  draw('chartDonut',renderDonut);
+  draw('chartStacked',renderStacked);
+  draw('chartHBar',renderHBar);
+  draw('chartTreemap',renderTreemap);
+  draw('chartRadar',renderRadar);
+  draw('chartHeatmap',renderHeatmap);
+}
+function openAnalytics(){
+  go('s-analytics');
+  const empty=document.getElementById('analyticsEmpty'),grid=document.getElementById('analyticsGrid');
+  const has=entries.some(en=>_S2(en).finding||_S2(en).sev||_S2(en).cat||_S2(en).status||_S2(en).conseq);
+  if(empty&&grid){empty.style.display=has?'none':'block';grid.style.display=has?'':'none';}
+  scheduleCharts();
+}
+let _chartRaf;
+function scheduleCharts(){cancelAnimationFrame(_chartRaf);_chartRaf=requestAnimationFrame(renderCharts);}
+window.addEventListener('resize',()=>{ if(document.getElementById('s-analytics').classList.contains('active')) scheduleCharts(); });
+
+
+/* ===== INJECTED: EXPORT PIPELINE ===== */
+/* ====================================================================
+   ADITUP · EXPORT PIPELINE (real .xlsx / .pptx / .pdf)
+   Real .xlsx / .pptx / .pdf generated entirely offline (no network).
+   Validated to open in Excel / PowerPoint / PDF readers.
+   ==================================================================== */
+
+/* ====================================================================
+   OFFLINE EXPORT ENGINE — no libraries, no network.
+   xlsx & pptx are ZIPs (written by hand, STORED entries); pdf is written
+   directly. All validated to open in Excel / PowerPoint / PDF readers.
+   ==================================================================== */
+const _crcTable=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=_crcTable[(c^b[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function strBytes(s){return new TextEncoder().encode(s);}
+function concatBytes(arrs){let len=0;arrs.forEach(a=>len+=a.length);const out=new Uint8Array(len);let o=0;arrs.forEach(a=>{out.set(a,o);o+=a.length;});return out;}
+function zipStore(files){
+  const enc=[],central=[];let offset=0;
+  const u16=v=>new Uint8Array([v&0xFF,(v>>8)&0xFF]);
+  const u32=v=>new Uint8Array([v&0xFF,(v>>8)&0xFF,(v>>16)&0xFF,(v>>24)&0xFF]);
+  files.forEach(f=>{
+    const name=strBytes(f.name),data=f.data,crc=crc32(data);
+    const local=concatBytes([u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name,data]);
+    enc.push(local);
+    central.push(concatBytes([u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name]));
+    offset+=local.length;
+  });
+  const cb=concatBytes(central);
+  const end=concatBytes([u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(cb.length),u32(offset),u16(0)]);
+  return concatBytes([...enc,cb,end]);
+}
+function xmlEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));}
+function dataURLtoBytes(d){const i=d.indexOf(',');const bin=atob(d.slice(i+1));const out=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)out[k]=bin.charCodeAt(k);return out;}
+function saveBytes(bytes,name,mime){const blob=new Blob([bytes],{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},400);}
+
+/* ---- XLSX (palette styles, merges, row heights, embedded images) ---- */
+function _colRef(c){let s='';c++;while(c>0){const m=(c-1)%26;s=String.fromCharCode(65+m)+s;c=(c-(m+1))/26;}return s;}
+function _cellXML(r,c,cell){const ref=_colRef(c)+r;
+  let val,style=0;
+  if(cell&&typeof cell==='object'&&!Array.isArray(cell)){val=cell.v;style=cell.s||0;}else val=cell;
+  const sAttr=style?` s="${style}"`:'';
+  if(val===''||val==null)return `<c r="${ref}"${sAttr}/>`;
+  if(typeof val==='number'&&isFinite(val))return `<c r="${ref}"${sAttr}><v>${val}</v></c>`;
+  return `<c r="${ref}"${sAttr} t="inlineStr"><is><t xml:space="preserve">${xmlEsc(val)}</t></is></c>`;}
+function _sheetXML(sheet){
+  const rows=sheet.rows,cols=sheet.cols,merges=sheet.merges||[],rowH=sheet.rowH||{},hasHdrStyle=sheet.headerStyle!==false;
+  let body='';
+  rows.forEach((row,ri)=>{const r=ri+1;let cells='';
+    row.forEach((v,ci)=>{
+      // default header style 1 only when headerStyle not disabled and it's row 0 and cell isn't already styled
+      let cell=v;
+      if(ri===0&&hasHdrStyle&&!(v&&typeof v==='object'&&v.s))cell=(v&&typeof v==='object')?{...v,s:1}:{v:v,s:1};
+      cells+=_cellXML(r,ci,cell);});
+    const ht=rowH[ri]?` ht="${rowH[ri]}" customHeight="1"`:'';
+    body+=`<row r="${r}"${ht}>${cells}</row>`;});
+  const colsXml=cols?`<cols>${cols.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols>`:'';
+  const mergeXml=merges.length?`<mergeCells count="${merges.length}">${merges.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>`:'';
+  const drawingXml=sheet._hasDrawing?`<drawing r:id="rId1"/>`:'';
+  const ns=sheet._hasDrawing?' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"':'';
+  const frozen=sheet.freeze!==false?`<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>`:`<sheetViews><sheetView workbookViewId="0"/></sheetViews>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"${ns}>${frozen}${colsXml}<sheetData>${body}</sheetData>${mergeXml}${drawingXml}</worksheet>`;}
+/* one-cell-anchor drawing for images: list of {col,row,wEMU,hEMU,rId} */
+function _drawingXML(imgs){
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">${imgs.map((im,k)=>`<xdr:oneCellAnchor><xdr:from><xdr:col>${im.col}</xdr:col><xdr:colOff>${im.colOff||0}</xdr:colOff><xdr:row>${im.row}</xdr:row><xdr:rowOff>${im.rowOff||0}</xdr:rowOff></xdr:from><xdr:ext cx="${im.wEMU}" cy="${im.hEMU}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${k+2}" name="img${k+1}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="${im.rId}"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>`).join('')}</xdr:wsDr>`;}
+function buildXLSX(sheets){const files=[];
+  // figure out which sheets have drawings/images
+  let mediaCount=0;
+  sheets.forEach(s=>{s._hasDrawing=!!(s.images&&s.images.length);});
+  const imgExts=new Set();sheets.forEach(s=>(s.images||[]).forEach(im=>imgExts.add(im.ext||'png')));
+  files.push({name:'[Content_Types].xml',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${[...imgExts].map(e=>`<Default Extension="${e}" ContentType="image/${e==='jpg'?'jpeg':e}"/>`).join('')}<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}${sheets.map((s,i)=>s._hasDrawing?`<Override PartName="/xl/drawings/drawing${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>`:'').join('')}<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`)});
+  files.push({name:'_rels/.rels',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`)});
+  files.push({name:'xl/workbook.xml',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s,i)=>`<sheet name="${xmlEsc(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`)});
+  files.push({name:'xl/_rels/workbook.xml.rels',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`)});
+  /* styles: fonts, fills (palette), and cellXfs combining them.
+     font 0 body, 1 bold-deep (header), 2 white-big, 3 deep-big, 4 white-label, 5 deep-label, 6 title-cream
+     fills: 0 none,1 gray125,2 yellow,3 green,4 red,5 sage,6 deepGreen,7 greenTint
+     xf index: 0 default,1 header(yel+boldDeep),2 cardGreen(white big),3 cardRed(white big),
+     4 cardYellow(deep big),5 cardSage(deep big),6 cardGreenLabel(white),7 cardRedLabel(white),
+     8 cardYellowLabel(deep),9 cardSageLabel(deep),10 sectionTitle(cream on deep),11 cardGreenBig... */
+  files.push({name:'xl/styles.xml',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="7"><font><sz val="11"/><name val="Montserrat"/></font><font><b/><sz val="11"/><color rgb="FF183934"/><name val="Montserrat"/></font><font><b/><sz val="28"/><color rgb="FFF9F3D9"/><name val="Montserrat"/></font><font><b/><sz val="28"/><color rgb="FF183934"/><name val="Montserrat"/></font><font><sz val="11"/><color rgb="FFF9F3D9"/><name val="Montserrat"/></font><font><sz val="11"/><color rgb="FF183934"/><name val="Montserrat"/></font><font><b/><sz val="15"/><color rgb="FFF9F3D9"/><name val="Montserrat"/></font></fonts><fills count="8"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEFC71D"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF307268"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9614C"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF5FBF8F"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF183934"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1F4F48"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="16"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="4" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="3" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="3" fillId="5" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="4" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="4" fillId="4" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="5" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="5" fillId="5" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="6" fillId="6" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment vertical="center"/></xf><xf numFmtId="0" fontId="4" fillId="6" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="5" fillId="7" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="4" fillId="7" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="6" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment vertical="center"/></xf></cellXfs></styleSheet>`)});
+  sheets.forEach((s,i)=>{
+    files.push({name:`xl/worksheets/sheet${i+1}.xml`,data:strBytes(_sheetXML(s))});
+    if(s._hasDrawing){
+      const drImgs=[];
+      s.images.forEach((im,k)=>{const fn=`image${i+1}_${k+1}.${im.ext||'png'}`;files.push({name:`xl/media/${fn}`,data:im.bytes});
+        drImgs.push({...im,rId:'rId'+(k+1)});});
+      files.push({name:`xl/drawings/drawing${i+1}.xml`,data:strBytes(_drawingXML(drImgs))});
+      files.push({name:`xl/drawings/_rels/drawing${i+1}.xml.rels`,data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${s.images.map((im,k)=>`<Relationship Id="rId${k+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${i+1}_${k+1}.${im.ext||'png'}"/>`).join('')}</Relationships>`)});
+      files.push({name:`xl/worksheets/_rels/sheet${i+1}.xml.rels`,data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing${i+1}.xml"/></Relationships>`)});
+    }
+  });
+  return zipStore(files);}
+
+/* ---- PPTX ---- */
+const EMU=914400,SLIDE_W=12192000,SLIDE_H=6858000;
+function inEMU(i){return Math.round(i*EMU);}
+function pptTextBox(id,name,x,y,w,h,runs,opts){opts=opts||{};
+  const align=opts.align?`algn="${opts.align}"`:'',anchor=opts.anchor?`anchor="${opts.anchor}"`:'';
+  const rx=(Array.isArray(runs)?runs:[runs]).map(r=>{const sz=Math.round((r.size||14)*100),b=r.bold?' b="1"':'',col=r.color||'F9F3D9';
+    return `<a:r><a:rPr lang="en-US" sz="${sz}"${b} dirty="0"><a:solidFill><a:srgbClr val="${col}"/></a:solidFill><a:latin typeface="Montserrat"/><a:cs typeface="Montserrat"/></a:rPr><a:t>${xmlEsc(r.text)}</a:t></a:r>`;}).join('');
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${xmlEsc(name)}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom>${opts.fill?`<a:solidFill><a:srgbClr val="${opts.fill}"/></a:solidFill>`:'<a:noFill/>'}</p:spPr><p:txBody><a:bodyPr wrap="square" ${anchor}><a:normAutofit/></a:bodyPr><a:lstStyle/><a:p><a:pPr ${align}/>${rx}</a:p></p:txBody></p:sp>`;}
+function pptRect(id,x,y,w,h,fill){return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="rect${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${fill}"/></a:solidFill><a:ln><a:noFill/></a:ln></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>`;}
+function pptPic(id,rId,x,y,w,h){return `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="pic${id}"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;}
+function _slideXML(shapes,bg){return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="${bg||'183934'}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${shapes.join('')}</p:spTree></p:cSld><p:clrMapOvr><a:overrideClrMapping bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/></p:clrMapOvr></p:sld>`;}
+function _themeXML(){return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="ADITUP"><a:themeElements><a:clrScheme name="ADITUP"><a:dk1><a:srgbClr val="183934"/></a:dk1><a:lt1><a:srgbClr val="F9F3D9"/></a:lt1><a:dk2><a:srgbClr val="307268"/></a:dk2><a:lt2><a:srgbClr val="E2D2BF"/></a:lt2><a:accent1><a:srgbClr val="307268"/></a:accent1><a:accent2><a:srgbClr val="EFC71D"/></a:accent2><a:accent3><a:srgbClr val="BBC8CA"/></a:accent3><a:accent4><a:srgbClr val="E2D2BF"/></a:accent4><a:accent5><a:srgbClr val="5FBF8F"/></a:accent5><a:accent6><a:srgbClr val="D9614C"/></a:accent6><a:hlink><a:srgbClr val="307268"/></a:hlink><a:folHlink><a:srgbClr val="BBC8CA"/></a:folHlink></a:clrScheme><a:fontScheme name="Montserrat"><a:majorFont><a:latin typeface="Montserrat"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Montserrat"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="6350"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="12700"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="19050"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>`;}
+function buildPPTX(slides){const files=[];
+  const exts=new Set();slides.forEach(s=>(s.images||[]).forEach(im=>exts.add(im.ext)));
+  files.push({name:'[Content_Types].xml',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${[...exts].map(e=>`<Default Extension="${e}" ContentType="image/${e==='jpg'?'jpeg':e}"/>`).join('')}<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/><Override PartName="/ppt/presProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presProps+xml"/><Override PartName="/ppt/viewProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml"/><Override PartName="/ppt/tableStyles.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>${slides.map((s,i)=>`<Override PartName="/ppt/slides/slide${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('')}</Types>`)});
+  files.push({name:'_rels/.rels',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`)});
+  files.push({name:'docProps/core.xml',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>ADITUP Safety Audit</dc:title><dc:creator>ADITUP</dc:creator><cp:lastModifiedBy>ADITUP</cp:lastModifiedBy></cp:coreProperties>`)});
+  files.push({name:'docProps/app.xml',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>ADITUP</Application><PresentationFormat>On-screen Show (16:9)</PresentationFormat><Slides>${slides.length}</Slides></Properties>`)});
+  files.push({name:'ppt/presentation.xml',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${slides.map((s,i)=>`<p:sldId id="${256+i}" r:id="rId${i+2}"/>`).join('')}</p:sldIdLst><p:sldSz cx="${SLIDE_W}" cy="${SLIDE_H}" type="screen16x9"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`)});
+  const nSl=slides.length;
+  files.push({name:'ppt/_rels/presentation.xml.rels',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>${slides.map((s,i)=>`<Relationship Id="rId${i+2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${i+1}.xml"/>`).join('')}<Relationship Id="rId${nSl+2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps" Target="presProps.xml"/><Relationship Id="rId${nSl+3}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps" Target="viewProps.xml"/><Relationship Id="rId${nSl+4}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/><Relationship Id="rId${nSl+5}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles" Target="tableStyles.xml"/></Relationships>`)});
+  files.push({name:'ppt/presProps.xml',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentationPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>`)});
+  files.push({name:'ppt/viewProps.xml',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:viewPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>`)});
+  files.push({name:'ppt/tableStyles.xml',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<a:tblStyleLst xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>`)});
+  files.push({name:'ppt/theme/theme1.xml',data:strBytes(_themeXML())});
+  files.push({name:'ppt/slideMasters/slideMaster1.xml',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="183934"/></a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/></p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle><a:lvl1pPr><a:defRPr sz="2400"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="Montserrat"/></a:defRPr></a:lvl1pPr></p:titleStyle><p:bodyStyle><a:lvl1pPr><a:defRPr sz="1400"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="Montserrat"/></a:defRPr></a:lvl1pPr></p:bodyStyle><p:otherStyle><a:lvl1pPr><a:defRPr><a:latin typeface="Montserrat"/></a:defRPr></a:lvl1pPr></p:otherStyle></p:txStyles></p:sldMaster>`)});
+  files.push({name:'ppt/slideMasters/_rels/slideMaster1.xml.rels',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>`)});
+  files.push({name:'ppt/slideLayouts/slideLayout1.xml',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank" preserve="1"><p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/></p:spTree></p:cSld></p:sldLayout>`)});
+  files.push({name:'ppt/slideLayouts/_rels/slideLayout1.xml.rels',data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`)});
+  slides.forEach((s,i)=>{
+    files.push({name:`ppt/slides/slide${i+1}.xml`,data:strBytes(_slideXML(s.shapes,s.bg))});
+    const rels=[`<Relationship Id="rIdL" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>`];
+    (s.images||[]).forEach((im,k)=>{const fn=`image_${i+1}_${k+1}.${im.ext}`;files.push({name:`ppt/media/${fn}`,data:im.bytes});
+      rels.push(`<Relationship Id="rId${k+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${fn}"/>`);});
+    files.push({name:`ppt/slides/_rels/slide${i+1}.xml.rels`,data:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.join('')}</Relationships>`)});
+  });
+  return zipStore(files);}
+
+/* ---- PDF ---- */
+const PDF_H=842,PDF_W=595;
+function pdfEsc(s){return String(s).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)').replace(/[\r\n]+/g,' ');}
+function buildPDF(pages){
+  const parts={};let num=3;
+  const pageObjNums=[],pageDefs=[];
+  pages.forEach(pg=>{const imgObjs=[];(pg.images||[]).forEach(im=>{im._obj=num++;imgObjs.push(im);});const contentObj=num++,pageObj=num++;pageObjNums.push(pageObj);pageDefs.push({pg,imgObjs,contentObj,pageObj});});
+  parts[1]=strBytes(`<< /Type /Catalog /Pages 2 0 R >>`);
+  parts[2]=strBytes(`<< /Type /Pages /Kids [${pageObjNums.map(n=>n+' 0 R').join(' ')}] /Count ${pages.length} >>`);
+  const fontObj=num++,fontBoldObj=num++;
+  parts[fontObj]=strBytes(`<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>`);
+  parts[fontBoldObj]=strBytes(`<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>`);
+  pageDefs.forEach(({pg,imgObjs,contentObj,pageObj})=>{
+    imgObjs.forEach(im=>{const head=`<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bytes.length} >>\nstream\n`;
+      parts[im._obj]=concatBytes([strBytes(head),im.bytes,strBytes(`\nendstream`)]);});
+    const cb=strBytes(pg.ops.join('\n'));
+    parts[contentObj]=concatBytes([strBytes(`<< /Length ${cb.length} >>\nstream\n`),cb,strBytes(`\nendstream`)]);
+    const xobjs=imgObjs.map((im,i)=>`/Img${i} ${im._obj} 0 R`).join(' ');
+    parts[pageObj]=strBytes(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontObj} 0 R /F2 ${fontBoldObj} 0 R >> /XObject << ${xobjs} >> >> /Contents ${contentObj} 0 R >>`);
+  });
+  const header=strBytes(`%PDF-1.4\n%\xFF\xFF\xFF\xFF\n`);
+  let body=[header],offset=header.length;const xref=[],maxObj=num-1;
+  for(let i=1;i<=maxObj;i++){const b=parts[i];if(!b){xref[i]=null;continue;}const head=strBytes(`${i} 0 obj\n`),tail=strBytes(`\nendobj\n`);xref[i]=offset;body.push(head,b,tail);offset+=head.length+b.length+tail.length;}
+  const xrefStart=offset;let xs=`xref\n0 ${maxObj+1}\n0000000000 65535 f \n`;
+  for(let i=1;i<=maxObj;i++)xs+=String(xref[i]||0).padStart(10,'0')+' 00000 n \n';
+  xs+=`trailer\n<< /Size ${maxObj+1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+  body.push(strBytes(xs));return concatBytes(body);
+}
+function pdfText(x,yTop,size,text,bold,rgb){const y=PDF_H-yTop,col=rgb?`${rgb[0]} ${rgb[1]} ${rgb[2]} rg`:`0.97 0.95 0.85 rg`;
+  return `BT ${col} /${bold?'F2':'F1'} ${size} Tf 1 0 0 1 ${x.toFixed(1)} ${y.toFixed(1)} Tm (${pdfEsc(text)}) Tj ET`;}
+function pdfRectOp(x,yTop,w,h,rgb){const y=PDF_H-yTop-h;return `${rgb[0]} ${rgb[1]} ${rgb[2]} rg ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re f`;}
+function pdfImageOp(idx,x,yTop,w,h){const y=PDF_H-yTop-h;return `q ${w.toFixed(1)} 0 0 ${h.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)} cm /Img${idx} Do Q`;}
+function wrapText(text,size,maxW){const words=String(text||'').split(/\s+/),lines=[];let cur='';const w=s=>s.length*size*0.5;
+  words.forEach(word=>{const t=cur?cur+' '+word:word;if(w(t)>maxW&&cur){lines.push(cur);cur=word;}else cur=t;});if(cur)lines.push(cur);return lines.length?lines:[''];}
+
+/* JPEG natural dimensions (needed for PDF /Width /Height) from a dataURL */
+function jpegSize(dataUrl){return new Promise(res=>{const img=new Image();img.onload=()=>res({w:img.naturalWidth,h:img.naturalHeight});img.onerror=()=>res({w:1,h:1});img.src=dataUrl;});}
+/* render a chart SVG straight to a JPEG dataURL (for PDF) */
+function chartJPEG(hostId,scale,quality){return new Promise(res=>{
+  const host=document.getElementById(hostId),svg=host&&host.querySelector('svg');if(!svg){res(null);return;}
+  const vb=svg.viewBox.baseVal,w=(vb&&vb.width)||520,h=(vb&&vb.height)||300;
+  const clone=svg.cloneNode(true);clone.setAttribute('width',w);clone.setAttribute('height',h);
+  const xml=new XMLSerializer().serializeToString(clone);const img=new Image();
+  img.onload=()=>{const c=document.createElement('canvas');c.width=w*(scale||2);c.height=h*(scale||2);
+    const ctx=c.getContext('2d');ctx.fillStyle='#16332e';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',quality||0.85));};
+  img.onerror=()=>res(null);img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml);});}
+
+/* ---- 3:4 photo compression to ~20% quality, capped px so files stay small ---- */
+const PHOTO_CELL={w:120,h:160};         // 3:4 ratio, the uniform report cell
+const PHOTO_PX={w:300,h:400};           // hard pixel cap for embeds (3:4)
+function fitPhoto(dataUrl,quality){
+  return new Promise(res=>{
+    if(!dataUrl){res(null);return;}
+    const img=new Image();
+    img.onload=()=>{
+      const c=document.createElement('canvas');c.width=PHOTO_PX.w;c.height=PHOTO_PX.h;
+      const ctx=c.getContext('2d');ctx.fillStyle='#0e2b27';ctx.fillRect(0,0,c.width,c.height);
+      // cover-fit into 3:4 without distortion
+      const ar=img.width/img.height, target=PHOTO_PX.w/PHOTO_PX.h;
+      let dw,dh,dx,dy;
+      if(ar>target){dh=PHOTO_PX.h;dw=dh*ar;dx=(PHOTO_PX.w-dw)/2;dy=0;}
+      else{dw=PHOTO_PX.w;dh=dw/ar;dx=0;dy=(PHOTO_PX.h-dh)/2;}
+      ctx.drawImage(img,dx,dy,dw,dh);
+      res(c.toDataURL('image/jpeg',quality));
+    };
+    img.onerror=()=>res(null);
+    img.src=dataUrl;
+  });
+}
+function dataUrlBytes(d){ if(!d)return 0; const i=d.indexOf(',');return Math.floor((d.length-i-1)*0.75); }
+function fmtMB(b){return (b/1048576).toFixed(1)+' MB';}
+
+/* ---- compress every photo once; auto-step quality down if over budget ---- */
+const SIZE_CAP=15*1048576, SIZE_FLOOR=10*1048576;
+async function preparePhotos(){
+  let q=0.20;
+  let photos=await Promise.all(entries.map(en=>fitPhoto(en.photo&&en.photo.dataUrl,q)));
+  let bytes=photos.reduce((s,p)=>s+dataUrlBytes(p),0);
+  // if photo payload alone threatens the cap, step quality down further (never claim a guarantee)
+  while(bytes>SIZE_CAP*0.8 && q>0.08){
+    q=Math.max(0.08,q-0.04);
+    photos=await Promise.all(entries.map(en=>fitPhoto(en.photo&&en.photo.dataUrl,q)));
+    bytes=photos.reduce((s,p)=>s+dataUrlBytes(p),0);
+  }
+  return {photos,bytes,q};
+}
+
+/* ---- snapshot a chart host's <svg> to a PNG dataURL for embeds ---- */
+/* Make sure chart SVGs exist before snapshotting (they live on the analytics
+   screen, which may never have been opened). Renderers fall back to a 520px
+   width when their host is hidden, so this is safe off-screen. */
+const CHART_IDS=['chartBubble','chartDonut','chartStacked','chartHBar','chartTreemap','chartRadar','chartHeatmap'];
+const CHART_TITLES={chartBubble:'Severity profile',chartDonut:'Closure status',chartStacked:'Risk distribution',chartHBar:'Category load',chartTreemap:'Findings by type',chartRadar:'Impact by consequence',chartHeatmap:'Location density'};
+function ensureChartsRendered(){
+  const need=CHART_IDS.some(id=>{const el=document.getElementById(id);return el&&!el.querySelector('svg');});
+  if(need)renderCharts();
+}
+/* snapshot every chart once, as PNG (for xlsx/pptx) and JPEG (for pdf) */
+async function snapshotAllCharts(){
+  ensureChartsRendered();
+  const out={};
+  for(const id of CHART_IDS){
+    out[id]={png:await chartPNG(id,2),jpg:await chartJPEG(id,2,0.85),title:CHART_TITLES[id]};
+  }
+  return out;
+}
+function chartPNG(hostId,scale){
+  return new Promise(res=>{
+    const host=document.getElementById(hostId);const svg=host&&host.querySelector('svg');
+    if(!svg){res(null);return;}
+    const vb=svg.viewBox.baseVal; const w=(vb&&vb.width)||host.clientWidth||520, h=(vb&&vb.height)||300;
+    const clone=svg.cloneNode(true);clone.setAttribute('width',w);clone.setAttribute('height',h);
+    const xml=new XMLSerializer().serializeToString(clone);
+    const img=new Image();
+    img.onload=()=>{const c=document.createElement('canvas');c.width=w*(scale||2);c.height=h*(scale||2);
+      const ctx=c.getContext('2d');ctx.fillStyle='#16332e';ctx.fillRect(0,0,c.width,c.height);
+      ctx.drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/png'));};
+    img.onerror=()=>res(null);
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml);
+  });
+}
+
+/* ---- shared computed-row builder ---- */
+function exportRows(){
+  return entries.map((en,i)=>{const st=s2State[en.id]||{};const pos=st.finding===POSITIVE;
+    const rating=pos?'N/A':((st.sev&&st.prob)?st.sev*st.prob:'');
+    return{sno:i+1,loc:en.loc||'',obs:en.txt||'',finding:st.finding||'',dept:pos?'':(st.dept||''),
+      sev:pos?'':(st.sev||''),prob:pos?'':(st.prob||''),risk:rating,crit:pos?'':(st.crit||''),
+      conseq:pos?'':(st.conseq||''),cat:pos?'':(st.cat||''),legal:pos?'N/A':(st.legal||''),status:pos?'':(st.status||'')};});
+}
+function summaryStats(){
+  let high=0,mapped=0,pos=0;
+  entries.forEach(en=>{const st=s2State[en.id]||{};if(st.finding===POSITIVE){pos++;return;}const r=(st.sev&&st.prob)?st.sev*st.prob:0;if(r>=15)high++;if(st.legal)mapped++;});
+  return{total:entries.length,high,mapped,pos};
+}
+
+/* ===================== EXCEL (two sheets, real .xlsx) ===================== */
+async function exportXLSX(){
+  toast('Building Excel workbook…','ok');
+  try{
+    const m=auditMeta(),s=summaryStats(),rows=exportRows();
+    const fnd=aggFindings();
+    const cq={}; CONSEQUENCES.forEach(c=>cq[c]=0);
+    entries.forEach(en=>{const st=s2State[en.id]||{};if(st.finding===POSITIVE)return;if(st.conseq&&cq.hasOwnProperty(st.conseq))cq[st.conseq]++;});
+    const charts=await snapshotAllCharts();
+    const {photos}=await preparePhotos();
+
+    /* ---------- Sheet 1: DASHBOARD (formatted like the app) ---------- */
+    // grid: 8 columns. Title band, meta, then 4 metric cards (each 2 cols wide, 3 rows tall), then breakdowns + charts.
+    const D=[];const merges=[];const rowH={};
+    const blank=n=>Array(n).fill('');
+    // row0 title (merged A1:H1)
+    D.push([{v:'ADITUP — SAFETY AUDIT DASHBOARD',s:10},'','','','','','','']);merges.push('A1:H1');rowH[0]=30;
+    D.push(blank(8));
+    // meta rows
+    D.push([{v:'Plant',s:12},{v:m.plant,s:0},'',{v:'Date',s:12},{v:m.date,s:0},'','','']);
+    D.push([{v:'Location',s:12},{v:m.loc,s:0},'',{v:'Auditor',s:12},{v:m.auditor,s:0},'','','']);
+    D.push(blank(8));
+    // metric cards — each card spans 2 cols x 2 rows. value row + label row.
+    const cardRow=D.length; // 0-indexed row where card values go
+    const cardDefs=[['Observations',s.total,2,6],['High risk',s.high,3,6],['Mapped to law',s.mapped,4,8],['Positive',s.pos,5,8]];
+    // value row
+    D.push(cardDefs.map(c=>({v:c[1],s:c[2]})).flatMap((c,i)=>[c,{v:'',s:cardDefs[i][2]}]));
+    // label row
+    D.push(cardDefs.map(c=>({v:c[0],s:c[3]})).flatMap((c,i)=>[c,{v:'',s:cardDefs[i][3]}]));
+    rowH[cardRow]=40;rowH[cardRow+1]=20;
+    cardDefs.forEach((c,i)=>{const c0=_colRef(i*2),c1=_colRef(i*2+1);merges.push(`${c0}${cardRow+1}:${c1}${cardRow+1}`);merges.push(`${c0}${cardRow+2}:${c1}${cardRow+2}`);});
+    D.push(blank(8));
+    // findings breakdown
+    D.push([{v:'FINDINGS BREAKDOWN',s:10},'','','',{v:'CONSEQUENCE BREAKDOWN',s:10},'','','']);merges.push(`A${D.length}:D${D.length}`);merges.push(`E${D.length}:H${D.length}`);
+    const fStart=D.length;
+    const maxLen=Math.max(fnd.length,CONSEQUENCES.length);
+    for(let i=0;i<maxLen;i++){
+      const f=fnd[i],c=CONSEQUENCES[i];
+      D.push([ f?{v:f.label,s:0}:'', f?{v:f.value,s:0}:'', '', '', c?{v:c,s:0}:'', c?{v:cq[c],s:0}:'', '', '' ]);
+    }
+    D.push(blank(8));
+    // embed the 7 charts into the dashboard sheet, 2 per row band
+    const dashImgs=[];
+    const chartArr=CHART_IDS.map(id=>charts[id]).filter(c=>c&&c.png);
+    let chartTopRow=D.length+1; // anchor charts a couple rows below
+    D.push([{v:'VISUAL ANALYTICS',s:10},'','','','','','','']);merges.push(`A${D.length}:H${D.length}`);
+    // size charts to fit ~3.7 columns wide each; keep within the 8-col grid
+    const CHART_W=300,CHART_H=190; // px
+    const pxToEMU=px=>Math.round(px*9525);
+    chartArr.forEach((c,i)=>{
+      const col=(i%2)*4;             // left half (col0) / right half (col4)
+      const band=Math.floor(i/2);
+      const row=chartTopRow+band*11;  // 11 rows per band
+      dashImgs.push({col,row,colOff:36000,rowOff:18000,wEMU:pxToEMU(CHART_W),hEMU:pxToEMU(CHART_H),ext:'png',bytes:dataURLtoBytes(c.png)});
+    });
+    // pad rows so the sheet is tall enough for the charts
+    const neededRows=chartTopRow+Math.ceil(chartArr.length/2)*11+2;
+    while(D.length<neededRows)D.push(blank(8));
+
+    /* ---------- Sheet 2: DATA TABLE (with embedded photos) ---------- */
+    const head=['SNO','Location','Observation','Finding Type','Department','Severity','Probability','Risk Rating','Criticality','Consequence','Category','Legal Requirement','Status','Photo'];
+    const T=[head];const tRowH={};const tImgs=[];
+    // 3:4 photo cell — column N (index 13). width ~18 chars, row height ~96px
+    const PHOTO_COL=13, CELL_W_PX=90, CELL_H_PX=120;
+    rows.forEach((r,ri)=>{
+      T.push([r.sno,r.loc,r.obs,r.finding,r.dept,r.sev===''?'':(+r.sev||r.sev),r.prob===''?'':(+r.prob||r.prob),r.risk,r.crit,r.conseq,r.cat,r.legal,r.status,'']);
+      if(photos[ri]){
+        const rowIdx=ri+1; // +1 for header
+        tRowH[rowIdx]=CELL_H_PX*0.75; // points
+        tImgs.push({col:PHOTO_COL,row:rowIdx,colOff:27000,rowOff:27000,wEMU:Math.round(CELL_W_PX*9525),hEMU:Math.round(CELL_H_PX*9525),ext:'jpg',bytes:dataURLtoBytes(photos[ri])});
+      }
+    });
+
+    const bytes=buildXLSX([
+      {name:'Dashboard',rows:D,cols:[16,12,4,16,16,4,12,12],merges,rowH,images:dashImgs,headerStyle:false,freeze:false},
+      {name:'Data Table',rows:T,cols:[6,18,40,16,14,9,11,11,12,20,20,24,12,16],rowH:tRowH,images:tImgs}
+    ]);
+    saveBytes(bytes,`aditup-audit-${m.date||'export'}.xlsx`,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    toast('Excel downloaded — formatted Dashboard, charts & photos embedded.','ok');
+  }catch(err){toast(err.message||'Excel export failed.','warn');}
+}
+/* Excel now embeds photos via hand-written drawing parts, and 7 charts on the dashboard. */
+
+/* ===================== POWERPOINT (multi-slide .pptx) ===================== */
+async function exportPPTX(){
+  toast('Rendering charts & building deck…','ok');
+  try{
+    const m=auditMeta(),s=summaryStats(),rows=exportRows();
+    const charts=await snapshotAllCharts();
+    const {photos,bytes,q}=await preparePhotos();
+    const DEEP='183934',GRN='307268',YEL='efc71d',CRM='f9f3d9',SAGE='bbc8ca';
+    const IN=inEMU; // shorthand
+    const slides=[];
+    let gid; // per-slide shape id counter
+    const mk=()=>{gid=2;};
+    const header=(shapes,title)=>{shapes.push(pptRect(gid++,0,0,SLIDE_W,IN(0.12),YEL));
+      shapes.push(pptTextBox(gid++,'title',IN(0.6),IN(0.3),IN(12),IN(0.7),[{text:title,size:24,bold:true,color:CRM}]));
+      shapes.push(pptTextBox(gid++,'wm',IN(11.2),IN(6.95),IN(1.8),IN(0.4),[{text:'ADITUP',size:11,bold:true,color:YEL}],{align:'r'}));};
+    const imgBytes=d=>d?dataURLtoBytes(d):null;
+
+    // Slide 1 — title
+    mk();let sh=[];
+    sh.push(pptRect(gid++,0,IN(3.0),SLIDE_W,IN(1.5),GRN));
+    sh.push(pptTextBox(gid++,'t',IN(0.6),IN(2.85),IN(12),IN(0.9),[{text:'Safety Audit Report',size:40,bold:true,color:CRM}]));
+    sh.push(pptTextBox(gid++,'sub',IN(0.6),IN(4.15),IN(12),IN(0.5),[{text:`${m.plant||'Site'}  ·  ${m.loc||'—'}  ·  ${m.date||''}`,size:16,color:SAGE}]));
+    sh.push(pptTextBox(gid++,'aud',IN(0.6),IN(4.65),IN(12),IN(0.4),[{text:`Auditor: ${m.auditor||'—'}`,size:13,color:SAGE}]));
+    slides.push({bg:DEEP,shapes:sh,images:[]});
+
+    // Slide 2 — summary metric cards
+    mk();sh=[];header(sh,'Summary');
+    const cards=[['Observations',s.total,GRN,CRM],['High risk',s.high,'d9614c',CRM],['Mapped to law',s.mapped,YEL,DEEP],['Positive',s.pos,'5fbf8f',DEEP]];
+    cards.forEach((c,i)=>{const x=IN(0.6+i*3.15);sh.push(pptRect(gid++,x,IN(1.7),IN(2.9),IN(2.4),c[2]));
+      sh.push(pptTextBox(gid++,'v',x,IN(2.1),IN(2.9),IN(1.2),[{text:String(c[1]),size:54,bold:true,color:c[3]}],{align:'ctr'}));
+      sh.push(pptTextBox(gid++,'k',x,IN(3.3),IN(2.9),IN(0.5),[{text:c[0],size:14,color:c[3]}],{align:'ctr'}));});
+    slides.push({bg:DEEP,shapes:sh,images:[]});
+
+    // Analytics slides — all 7 charts, 2 per slide
+    const chartOrder=CHART_IDS.map(id=>({id,c:charts[id]})).filter(o=>o.c&&o.c.png);
+    for(let i=0;i<chartOrder.length;i+=2){
+      mk();sh=[];header(sh,'Visual analytics');const imgs=[];const pair=chartOrder.slice(i,i+2);
+      pair.forEach((o,k)=>{const x=k===0?0.6:6.95;
+        sh.push(pptTextBox(gid++,'ct',IN(x),IN(1.25),IN(5.8),IN(0.4),[{text:o.c.title,size:14,bold:true,color:YEL}]));
+        imgs.push({ext:'png',bytes:imgBytes(o.c.png)});
+        sh.push(pptPic(gid++,'rId'+imgs.length,IN(x),IN(1.75),IN(5.7),IN(4.6)));});
+      slides.push({bg:DEEP,shapes:sh,images:imgs});
+    }
+
+    // Slide 4 — data table (drawn as rows of rects + text, since we have no table primitive)
+    mk();sh=[];header(sh,'Observations');
+    const cols=[['SNO',0.6],['Location',1.5],['Observation',3.4],['Finding',1.6],['Consequence',2.0],['Risk',0.8],['Status',1.2]];
+    let cx=0.4;const colX=cols.map(c=>{const x=cx;cx+=c[1];return x;});
+    // header row
+    sh.push(pptRect(gid++,IN(0.4),IN(1.25),IN(cx-0.4),IN(0.34),YEL));
+    cols.forEach((c,ci)=>sh.push(pptTextBox(gid++,'h',IN(colX[ci]+0.04),IN(1.28),IN(c[1]),IN(0.3),[{text:c[0],size:9,bold:true,color:DEEP}])));
+    let ry=1.62;
+    rows.slice(0,14).forEach((r,ri)=>{
+      if(ri%2)sh.push(pptRect(gid++,IN(0.4),IN(ry-0.02),IN(cx-0.4),IN(0.36),'1f4f48'));
+      const cells=[String(r.sno),r.loc,(r.obs||'').slice(0,46),r.finding,r.conseq,String(r.risk),r.status];
+      cells.forEach((cell,ci)=>sh.push(pptTextBox(gid++,'c',IN(colX[ci]+0.04),IN(ry),IN(cols[ci][1]),IN(0.34),[{text:cell||'—',size:8.5,color:CRM}])));
+      ry+=0.36;
+    });
+    if(rows.length>14)sh.push(pptTextBox(gid++,'more',IN(0.4),IN(ry+0.05),IN(11),IN(0.4),[{text:`+ ${rows.length-14} more in the Excel export`,size:10,color:SAGE}]));
+    slides.push({bg:DEEP,shapes:sh,images:[]});
+
+    // Slides 5+ — evidence photos (3:4)
+    const withPhoto=rows.map((r,i)=>({r,p:photos[i]})).filter(o=>o.p);
+    for(let i=0;i<withPhoto.length;i+=8){
+      mk();sh=[];header(sh,'Evidence photos');const chunk=withPhoto.slice(i,i+8);const imgs=[];
+      chunk.forEach((o,k)=>{const col=k%4,row=Math.floor(k/4);const x=0.6+col*3.15,y=1.5+row*2.8;
+        imgs.push({ext:'jpg',bytes:dataURLtoBytes(o.p)});
+        sh.push(pptPic(gid++,'rId'+imgs.length,IN(x),IN(y),IN(1.2),IN(1.6)));
+        sh.push(pptTextBox(gid++,'cap',IN(x+1.35),IN(y),IN(1.7),IN(1.6),[{text:`#${o.r.sno} ${o.r.loc}`.slice(0,28),size:9,color:CRM}]));});
+      slides.push({bg:DEEP,shapes:sh,images:imgs});
+    }
+
+    const pbytes=buildPPTX(slides);
+    saveBytes(pbytes,`aditup-audit-${m.date||'export'}.pptx`,'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+    sizeNote(bytes,q,'PowerPoint');
+  }catch(err){toast(err.message||'PPT export failed.','warn');}
+}
+
+/* ===================== PDF (multi-page, hand-written, offline) ===================== */
+async function exportPDFdoc(){
+  toast('Rendering charts & building PDF…','ok');
+  try{
+    const m=auditMeta(),s=summaryStats(),rows=exportRows();
+    const charts=await snapshotAllCharts();
+    // measure jpeg sizes for every chart
+    const chartList=[];
+    for(const id of CHART_IDS){const c=charts[id];if(c&&c.jpg){const dim=await jpegSize(c.jpg);chartList.push({title:c.title,jpg:c.jpg,w:dim.w,h:dim.h});}}
+    const {photos,bytes,q}=await preparePhotos();
+    const DEEP=[0.094,0.224,0.204],GRN=[0.188,0.451,0.408],YEL=[0.937,0.78,0.114],CRM=[0.976,0.953,0.851],SAGE=[0.471,0.549,0.541];
+    const pages=[];
+    const bgOps=()=>[pdfRectOp(0,0,PDF_W,PDF_H,DEEP),pdfRectOp(0,0,PDF_W,6,YEL)];
+
+    // Cover
+    {const ops=[pdfRectOp(0,0,PDF_W,PDF_H,DEEP),pdfRectOp(0,300,PDF_W,120,GRN)];
+     ops.push(pdfText(40,360,30,'Safety Audit Report',true,CRM));
+     ops.push(pdfText(40,395,13,`${m.plant||'Site'}  -  ${m.loc||'—'}  -  ${m.date||''}`,false,SAGE));
+     ops.push(pdfText(40,414,13,`Auditor: ${m.auditor||'—'}`,false,SAGE));
+     ops.push(pdfText(PDF_W-90,800,11,'ADITUP',true,YEL));
+     pages.push({ops,images:[]});}
+
+    // Summary metrics page
+    {const ops=bgOps();
+     ops.push(pdfText(40,46,18,'Summary',true,CRM));
+     const cards=[['Observations',s.total,GRN],['High risk',s.high,[0.851,0.380,0.298]],['Mapped to law',s.mapped,YEL],['Positive',s.pos,[0.373,0.749,0.561]]];
+     cards.forEach((c,i)=>{const cx=40+i*128;ops.push(pdfRectOp(cx,80,118,90,c[2]));
+       const tcol=(i>=2)?DEEP:CRM;
+       ops.push(pdfText(cx+12,128,30,String(c[1]),true,tcol));
+       ops.push(pdfText(cx+12,152,9,c[0],false,tcol));});
+     pages.push({ops,images:[]});}
+
+    // Analytics pages — all 7 charts, 2 per page
+    for(let i=0;i<chartList.length;i+=2){
+      const ops=bgOps();ops.push(pdfText(40,46,18,'Visual analytics',true,CRM));
+      const pair=chartList.slice(i,i+2);const imgs=[];let idx=0;
+      pair.forEach((c,k)=>{const top=80+k*350;
+        ops.push(pdfText(40,top-8,12,c.title,true,YEL));
+        // fit into 500x300 box preserving aspect
+        const boxW=500,boxH=300;const ar=c.w/c.h;let dw=boxW,dh=boxW/ar;if(dh>boxH){dh=boxH;dw=boxH*ar;}
+        imgs.push({bytes:dataURLtoBytes(c.jpg),w:c.w,h:c.h});
+        ops.push(pdfImageOp(idx++,40,top+6,dw,dh));});
+      pages.push({ops,images:imgs});
+    }
+
+    // Data table (paginated, word-wrapped)
+    const cols=[['SNO',26],['Location',60],['Observation',130],['Finding',62],['Consequence',78],['Risk',28],['Legal',75],['Status',48]];
+    let ops=bgOps();ops.push(pdfText(40,46,18,'Observations',true,CRM));
+    let y=72;let x=40;ops.push(pdfRectOp(40,y-12,PDF_W-80,16,YEL));
+    cols.forEach(c=>{ops.push(pdfText(x+2,y,8,c[0],true,DEEP));x+=c[1];});y+=16;
+    const flush=()=>{pages.push({ops,images:[]});ops=bgOps();y=46;};
+    rows.forEach(r=>{
+      const obsLines=wrapText(r.obs,8,cols[2][1]-4);const rowH=Math.max(14,obsLines.length*9);
+      if(y+rowH>815)flush();
+      const cells=[String(r.sno),r.loc,null,r.finding,r.conseq,String(r.risk),String(r.legal),r.status];
+      x=40;cells.forEach((cell,ci)=>{const wdt=cols[ci][1];
+        if(ci===2){obsLines.forEach((ln,li)=>ops.push(pdfText(x+2,y+li*9,8,ln,false,CRM)));}
+        else{const lines=wrapText(cell||'—',8,wdt-4);lines.slice(0,2).forEach((ln,li)=>ops.push(pdfText(x+2,y+li*9,8,ln,false,CRM)));}
+        x+=wdt;});
+      y+=rowH;
+    });
+    pages.push({ops,images:[]});
+
+    // Evidence photos (3:4 grid)
+    const withPhoto=rows.map((r,i)=>({r,p:photos[i]})).filter(o=>o.p);
+    if(withPhoto.length){
+      let pops=bgOps();pops.push(pdfText(40,46,18,'Evidence photos',true,CRM));
+      let pimgs=[],px=40,py=70,cw=120,ch=160,col=0,idx=0;
+      const psz=await Promise.all(withPhoto.map(o=>jpegSize(o.p)));
+      const flushP=()=>{pages.push({ops:pops,images:pimgs});pops=bgOps();pimgs=[];px=40;py=46;col=0;idx=0;};
+      withPhoto.forEach((o,i)=>{
+        if(py+ch+18>815)flushP();
+        pimgs.push({bytes:dataURLtoBytes(o.p),w:psz[i].w,h:psz[i].h});
+        pops.push(pdfImageOp(idx++,px,py,cw,ch));
+        pops.push(pdfText(px,py+ch+12,8,`#${o.r.sno} ${o.r.loc}`.slice(0,22),false,SAGE));
+        col++;if(col>=4){col=0;px=40;py+=ch+30;}else px+=cw+18;
+      });
+      pages.push({ops:pops,images:pimgs});
+    }
+
+    const pdfBytes=buildPDF(pages);
+    saveBytes(pdfBytes,`aditup-audit-${m.date||'export'}.pdf`,'application/pdf');
+    sizeNote(bytes,q,'PDF');
+  }catch(err){toast(err.message||'PDF export failed.','warn');}
+}
+
+/* honest size reporting — warns instead of pretending to guarantee */
+function sizeNote(photoBytes,q,kind){
+  const approx=fmtMB(photoBytes+600000); // photos + chrome estimate
+  if(photoBytes>SIZE_CAP) toast(`${kind} saved. ⚠ Photos are large (~${approx}); over the 15 MB target even at ${Math.round(q*100)}% quality. Remove some photos for easy email sharing.`,'warn');
+  else toast(`${kind} saved · ~${approx}, photos at ${Math.round(q*100)}% quality.`,'ok');
+}
+
+
+</script>
+<script>
+/* PWA: register the service worker for offline + installability.
+   Note: this only activates when the page is served over http(s),
+   not from a file:// path. */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('service-worker.js').catch(function () {
+      /* SW registration fails silently on file:// or unsupported contexts;
+         the app still works, just without offline caching/install. */
+    });
+  });
+}
+</script>
+</body>
+</html>
